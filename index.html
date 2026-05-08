@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#09090f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tember">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Tember</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #09090f;
+  --bg-card:   #111119;
+  --bg-card-h: #15151f;
+  --border:    rgba(255,255,255,0.07);
+  --border-s:  rgba(255,255,255,0.13);
+  --text:      #f0ede6;
+  --text-mid:  #8a8680;
+  --text-dim:  #484540;
+  --gold:      #e8c97a;
+  --gold-bg:   rgba(232,201,122,0.09);
+  --gold-bd:   rgba(232,201,122,0.22);
+  --blue:      #7eb8f7;
+  --blue-bg:   rgba(126,184,247,0.09);
+  --blue-bd:   rgba(126,184,247,0.22);
+  --rose:      #d4908a;
+  --rose-bg:   rgba(212,144,138,0.09);
+  --rose-bd:   rgba(212,144,138,0.22);
+  --r: 14px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -80px; left: 50%;
+  transform: translateX(-50%);
+  width: 900px; height: 600px;
+  background: radial-gradient(ellipse, rgba(232,201,122,0.038) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ─────────────────────────────────────────────────────────
+   ONBOARDING
+───────────────────────────────────────────────────────── */
+#onboarding {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 1000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 28px calc(32px + var(--safe-bottom));
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+#onboarding.out {
+  opacity: 0; transform: scale(1.04); pointer-events: none;
+}
+
+.ob-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%; max-width: 380px;
+  animation: obIn 0.4s ease both;
+}
+.ob-screen.active { display: flex; }
+
+@keyframes obIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Screen 1 — Welcome */
+.ob-ember {
+  width: 88px; height: 88px;
+  margin-bottom: 28px;
+  filter: drop-shadow(0 0 24px rgba(232,201,122,0.35));
+  animation: emberGlow 3s ease-in-out infinite;
+}
+@keyframes emberGlow {
+  0%,100% { filter: drop-shadow(0 0 20px rgba(232,201,122,0.3)); }
+  50%     { filter: drop-shadow(0 0 36px rgba(232,201,122,0.55)); }
+}
+
+.ob-wordmark {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 14px;
+}
+.ob-headline {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic; font-size: 1.75rem;
+  line-height: 1.3; color: var(--text);
+  margin-bottom: 16px;
+}
+.ob-sub {
+  font-size: 14px; font-weight: 300;
+  color: var(--text-mid); line-height: 1.65;
+  max-width: 300px; margin-bottom: 40px;
+}
+
+/* Screen 2 — Pace */
+.ob-q {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic; font-size: 1.5rem;
+  line-height: 1.35; color: var(--text);
+  margin-bottom: 32px;
+}
+
+.pace-options { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+
+.pace-opt {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 16px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer; text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+}
+.pace-opt:hover { border-color: var(--border-s); background: var(--bg-card-h); }
+.pace-opt.selected { border-color: var(--gold-bd); background: var(--gold-bg); }
+
+.pace-radio {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--border-s);
+  flex-shrink: 0; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s;
+}
+.pace-opt.selected .pace-radio {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+.pace-opt.selected .pace-radio::after {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--bg);
+}
+.pace-name {
+  font-size: 14px; font-weight: 500;
+  color: var(--text); margin-bottom: 3px;
+}
+.pace-desc { font-size: 12px; font-weight: 300; color: var(--text-mid); line-height: 1.4; }
+
+/* Screen 3 — Name */
+.ob-input-wrap { width: 100%; margin-bottom: 8px; }
+.ob-input {
+  width: 100%; background: var(--bg-card);
+  border: 1px solid var(--border-s); border-radius: 10px;
+  padding: 16px 18px;
+  font-family: inherit; font-size: 16px; /* 16px prevents iOS zoom */
+  color: var(--text); text-align: center;
+  transition: border-color 0.15s;
+}
+.ob-input::placeholder { color: var(--text-dim); }
+.ob-input:focus { outline: none; border-color: rgba(232,201,122,0.4); }
+.ob-hint { font-size: 12px; color: var(--text-dim); margin-bottom: 32px; }
+
+/* Screen 4 — Notifications */
+.notif-icon {
+  font-size: 40px; margin-bottom: 20px;
+  filter: drop-shadow(0 0 12px rgba(232,201,122,0.3));
+}
+.ob-notif-note {
+  font-size: 11px; color: var(--text-dim);
+  margin-top: 14px; line-height: 1.6;
+}
+
+/* Screen 5 — Email */
+.ob-email-skip {
+  font-size: 13px; color: var(--text-dim);
+  background: none; border: none;
+  font-family: inherit; cursor: pointer;
+  margin-top: 12px; padding: 8px;
+}
+.ob-email-skip:hover { color: var(--text-mid); }
+
+/* Shared OB buttons */
+.ob-btn {
+  width: 100%;
+  padding: 15px;
+  background: var(--gold);
+  border: none; border-radius: 999px;
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  color: #09090f; cursor: pointer;
+  transition: opacity 0.18s, transform 0.15s;
+  letter-spacing: 0.03em;
+}
+.ob-btn:hover { opacity: 0.87; transform: translateY(-1px); }
+.ob-btn:active { transform: translateY(0); }
+
+.ob-btn-ghost {
+  width: 100%; padding: 14px;
+  background: transparent; border: 1px solid var(--border-s);
+  border-radius: 999px;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  color: var(--text-mid); cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  margin-top: 10px;
+}
+.ob-btn-ghost:hover { border-color: var(--border-s); color: var(--text); }
+
+.ob-step {
+  position: absolute; bottom: 28px;
+  display: flex; gap: 6px;
+}
+.ob-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--border-s); transition: background 0.2s;
+}
+.ob-dot.on { background: var(--gold); }
+
+/* ─────────────────────────────────────────────────────────
+   INSTALL BANNER
+───────────────────────────────────────────────────────── */
+#installBanner {
+  position: fixed; bottom: calc(16px + var(--safe-bottom));
+  left: 50%; transform: translateX(-50%);
+  width: calc(100% - 40px); max-width: 480px;
+  background: var(--bg-card);
+  border: 1px solid var(--gold-bd);
+  border-radius: 16px; padding: 16px 20px;
+  display: none; align-items: center; gap: 14px;
+  z-index: 500; box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  animation: slideUp 0.35s ease both;
+}
+#installBanner.show { display: flex; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.install-icon { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
+.install-text { flex: 1; }
+.install-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.install-sub   { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.install-add {
+  padding: 8px 16px; background: var(--gold);
+  border: none; border-radius: 999px;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  color: #09090f; cursor: pointer; white-space: nowrap;
+}
+.install-dismiss {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 18px; cursor: pointer; padding: 4px; flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────
+   SETTINGS PANEL
+───────────────────────────────────────────────────────── */
+#settingsPanel {
+  position: fixed; inset: 0;
+  z-index: 600; display: flex; align-items: flex-end;
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.25s;
+}
+#settingsPanel.open { pointer-events: all; opacity: 1; }
+
+.settings-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+}
+.settings-sheet {
+  position: relative; z-index: 1;
+  width: 100%; background: #13131e;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border-s);
+  padding: 12px 24px calc(32px + var(--safe-bottom));
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height: 85vh; overflow-y: auto;
+}
+#settingsPanel.open .settings-sheet { transform: translateY(0); }
+
+.sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border-s); margin: 0 auto 24px;
+}
+.sheet-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 20px;
+}
+.sheet-section { margin-bottom: 28px; }
+.sheet-label {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-mid); margin-bottom: 10px;
+  letter-spacing: 0.06em;
+}
+.sheet-pace-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.sheet-pace-btn {
+  padding: 8px 16px; border-radius: 999px;
+  border: 1px solid var(--border-s); background: transparent;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+}
+.sheet-pace-btn:hover { color: var(--text-mid); }
+.sheet-pace-btn.on { background: var(--gold-bg); border-color: var(--gold-bd); color: var(--gold); }
+
+/* ── SHARE BUTTON ── */
+.share-quote-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--border-s);
+  border-radius: 999px; padding: 6px 14px;
+  font-family: inherit; font-size: 11px; font-weight: 500;
+  color: var(--text-dim); cursor: pointer;
+  transition: all 0.15s; letter-spacing: 0.05em;
+  margin-top: 20px;
+}
+.share-quote-btn:hover { border-color: var(--gold-bd); color: var(--gold); }
+
+/* ── SHARE MODAL ── */
+#shareModal {
+  position: fixed; inset: 0; z-index: 900;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+#shareModal.open { opacity: 1; pointer-events: all; }
+.share-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+}
+.share-inner {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 380px;
+  background: #13131e;
+  border: 1px solid var(--border-s);
+  border-radius: 20px;
+  padding: 24px;
+  transform: translateY(16px);
+  transition: transform 0.25s;
+}
+#shareModal.open .share-inner { transform: translateY(0); }
+.share-card-preview {
+  width: 100%; border-radius: 12px; overflow: hidden;
+  margin-bottom: 18px; background: var(--bg);
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+#shareCanvas {
+  width: 100%; height: 100%;
+  display: block;
+}
+.share-actions {
+  display: flex; gap: 10px;
+}
+.share-action-btn {
+  flex: 1; padding: 12px;
+  border-radius: 10px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.share-action-primary {
+  background: var(--gold); border: none; color: #09090f;
+}
+.share-action-primary:hover { opacity: 0.85; }
+.share-action-secondary {
+  background: transparent; border: 1px solid var(--border-s); color: var(--text-mid);
+}
+.share-action-secondary:hover { border-color: var(--border-s); color: var(--text); }
+.share-close {
+  width: 100%; padding: 10px; margin-top: 10px;
+  background: none; border: none;
+  font-family: inherit; font-size: 13px; color: var(--text-dim);
+  cursor: pointer;
+}
+.share-close:hover { color: var(--text-mid); }
+
+.sheet-input {
+  width: 100%; background: var(--bg);
+  border: 1px solid var(--border-s); border-radius: 10px;
+  padding: 12px 14px;
+  font-family: inherit; font-size: 14px; color: var(--text);
+  margin-bottom: 10px;
+}
+.sheet-input:focus { outline: none; }
+.sheet-input::placeholder { color: var(--text-dim); }
+
+.sheet-notif-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.sheet-notif-info { flex: 1; }
+.sheet-notif-label { font-size: 13px; font-weight: 500; color: var(--text); }
+.sheet-notif-status { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.notif-toggle {
+  width: 44px; height: 26px; border-radius: 13px;
+  background: var(--border-s); border: none; cursor: pointer;
+  position: relative; transition: background 0.2s; flex-shrink: 0;
+}
+.notif-toggle::after {
+  content: ''; position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--text-mid);
+  transition: transform 0.2s, background 0.2s;
+}
+.notif-toggle.on { background: var(--gold); }
+.notif-toggle.on::after { transform: translateX(18px); background: #09090f; }
+
+.sheet-save {
+  width: 100%; padding: 14px; background: var(--gold);
+  border: none; border-radius: 999px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  color: #09090f; cursor: pointer; margin-top: 8px;
+}
+.sheet-save:hover { opacity: 0.87; }
+
+/* ─────────────────────────────────────────────────────────
+   MAIN APP
+───────────────────────────────────────────────────────── */
+#app { opacity: 0; transition: opacity 0.6s ease; }
+#app.visible { opacity: 1; }
+
+.wrap {
+  max-width: 720px; margin: 0 auto;
+  padding: 0 28px calc(80px + var(--safe-bottom));
+  position: relative; z-index: 1;
+}
+
+/* Header */
+.app-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 36px 0 0;
+}
+.app-wordmark {
+  display: flex; align-items: center; gap: 10px;
+}
+.app-wordmark-icon { width: 22px; height: 22px; }
+.app-wordmark-text {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--gold);
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-pill {
+  font-size: 11px; color: var(--text-dim);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 12px;
+}
+.settings-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg-card); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-dim);
+  font-size: 14px; transition: border-color 0.15s, color 0.15s;
+}
+.settings-btn:hover { border-color: var(--border-s); color: var(--text-mid); }
+
+hr.rule { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+/* Greeting */
+.greeting {
+  font-size: 12px; color: var(--text-dim);
+  padding: 12px 0 0; letter-spacing: 0.04em;
+}
+.greeting span { color: var(--text-mid); }
+
+/* Quote hero */
+.quote-hero {
+  padding: 52px 0 28px; text-align: center;
+}
+.hour-label {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 32px;
+}
+.hour-label::before, .hour-label::after {
+  content: ''; width: 24px; height: 1px; background: var(--border-s);
+}
+
+/* Quote → Question bridge */
+.quote-bridge {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 0 16px;
+}
+.bridge-line {
+  flex: 1; height: 1px; background: var(--border);
+}
+.bridge-label {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.bridge-ember {
+  color: var(--gold); font-size: 9px; opacity: 0.7;
+}
+.quote-bg {
+  font-family: 'Playfair Display', serif;
+  font-size: 180px; line-height: 0;
+  color: rgba(255,255,255,0.02);
+  position: absolute; top: 24px; left: 50%;
+  transform: translateX(-50%);
+  user-select: none; pointer-events: none;
+}
+.quote-inner { position: relative; }
+.quote-body {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic; font-weight: 400;
+  font-size: clamp(1.38rem, 3vw, 2.1rem);
+  line-height: 1.38; color: var(--text);
+  max-width: 580px; margin: 0 auto 20px;
+  letter-spacing: -0.01em;
+  animation: fadeUp 0.6s ease both;
+}
+.quote-attr {
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-dim);
+  animation: fadeUp 0.6s 0.08s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Thought card */
+.thought-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: var(--r);
+  padding: 26px 28px;
+  position: relative; overflow: hidden;
+  animation: fadeUp 0.6s 0.14s ease both;
+  transition: border-bottom-color 0.2s, border-bottom-left-radius 0.2s, border-bottom-right-radius 0.2s;
+}
+.thought-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: linear-gradient(180deg, var(--gold), rgba(232,201,122,0.12));
+}
+.thought-card.form-open {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+.thought-eyebrow {
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 9px;
+}
+.thought-body {
+  font-size: 1rem; font-weight: 300;
+  line-height: 1.72; color: var(--text);
+  margin-bottom: 18px;
+}
+.thought-foot {
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.thought-timer {
+  font-size: 11px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 7px;
+}
+.pulse-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+  animation: pulse 2.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 0.3; box-shadow: 0 0 0 0 rgba(232,201,122,0); }
+  50%      { opacity: 1;   box-shadow: 0 0 7px 2px rgba(232,201,122,0.28); }
+}
+.respond-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 20px; background: var(--gold);
+  border: none; border-radius: 999px;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  letter-spacing: 0.04em; color: #09090f; cursor: pointer;
+  transition: opacity 0.17s, transform 0.14s;
+}
+.respond-btn:hover { opacity: 0.86; transform: translateY(-1px); }
+
+/* Inline form */
+.form-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border-s);
+  border-top: none;
+  border-radius: 0 0 var(--r) var(--r);
+  padding: 0 28px;
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.38s ease, padding 0.38s ease;
+}
+.form-wrap.open { max-height: 640px; padding: 2px 28px 24px; }
+.form-context {
+  padding: 16px 0 15px;
+  font-size: 12px; font-style: italic;
+  color: var(--text-dim); line-height: 1.5;
+  border-bottom: 1px solid var(--border); margin-bottom: 14px;
+}
+.form-context strong { color: var(--text-mid); font-style: normal; font-weight: 500; }
+textarea#tInput {
+  width: 100%; background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border-s); border-radius: 10px;
+  padding: 13px 15px;
+  font-family: inherit; font-size: 15px; font-weight: 300;
+  color: var(--text); line-height: 1.65;
+  resize: none; min-height: 96px;
+}
+textarea#tInput::placeholder { color: var(--text-dim); }
+textarea#tInput:focus { outline: none; border-color: rgba(255,255,255,0.18); }
+.tag-row {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; margin: 11px 0 0;
+}
+.tag-label { font-size: 10.5px; color: var(--text-dim); letter-spacing: 0.05em; white-space: nowrap; }
+.tag-btn {
+  padding: 4px 12px; border-radius: 999px;
+  border: 1px solid var(--border-s); background: transparent;
+  font-family: inherit; font-size: 11px; font-weight: 500;
+  color: var(--text-dim); cursor: pointer; transition: all 0.14s;
+}
+.tag-btn:hover { color: var(--text-mid); }
+.tag-btn.on-resonated { background: var(--gold-bg);  border-color: var(--gold-bd);  color: var(--gold); }
+.tag-btn.on-with-it   { background: var(--blue-bg);  border-color: var(--blue-bd);  color: var(--blue); }
+.tag-btn.on-missed    { background: var(--rose-bg);  border-color: var(--rose-bd);  color: var(--rose); }
+.form-row {
+  display: flex; gap: 10px; align-items: center;
+  margin-top: 12px; flex-wrap: wrap;
+}
+input#nInput {
+  flex: 1; min-width: 110px;
+  background: rgba(0,0,0,0.3); border: 1px solid var(--border-s);
+  border-radius: 8px; padding: 9px 13px;
+  font-family: inherit; font-size: 14px; color: var(--text);
+}
+input#nInput::placeholder { color: var(--text-dim); }
+input#nInput:focus { outline: none; }
+.btn-cancel {
+  background: none; border: none;
+  font-family: inherit; font-size: 13px;
+  color: var(--text-dim); cursor: pointer; padding: 9px 6px;
+}
+.btn-cancel:hover { color: var(--text-mid); }
+.btn-submit {
+  padding: 9px 22px; background: var(--gold);
+  border: none; border-radius: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  color: #09090f; cursor: pointer; white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.btn-submit:hover { opacity: 0.85; }
+
+/* Feed */
+.feed-section { margin-top: 30px; }
+.feed-header {
+  display: flex; align-items: baseline;
+  justify-content: space-between; gap: 12px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.feed-title {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mid);
+}
+.feed-count { font-size: 11px; color: var(--text-dim); }
+.feed { display: flex; flex-direction: column; gap: 10px; }
+
+/* Spark cards */
+.spark-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 20px;
+  transition: border-color 0.18s, background 0.18s;
+  animation: fadeUp 0.4s ease both;
+}
+.spark-card:hover { background: var(--bg-card-h); border-color: var(--border-s); }
+.card-top {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 11px; flex-wrap: wrap;
+}
+.card-name { font-size: 12px; font-weight: 500; color: var(--text-mid); }
+.card-time { font-size: 11px; color: var(--text-dim); margin-left: auto; }
+.badge {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px;
+}
+.badge-resonated { background: var(--gold-bg); color: var(--gold); }
+.badge-with-it   { background: var(--blue-bg);  color: var(--blue); }
+.badge-missed    { background: var(--rose-bg);  color: var(--rose); }
+.card-text { font-size: 14px; font-weight: 300; line-height: 1.72; color: var(--text); }
+.card-foot { margin-top: 13px; }
+.resonate-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 13px;
+  font-family: inherit; font-size: 12px; color: var(--text-dim);
+  cursor: pointer; transition: all 0.15s;
+}
+.resonate-btn:hover:not(.lit) { border-color: var(--border-s); color: var(--text-mid); }
+.resonate-btn.lit { background: var(--gold-bg); border-color: var(--gold-bd); color: var(--gold); }
+.empty {
+  text-align: center; padding: 48px 20px;
+  font-size: 13px; color: var(--text-dim);
+  border: 1px dashed var(--border); border-radius: var(--r);
+  line-height: 1.6;
+}
+
+/* Past threads */
+.threads-section { margin-top: 44px; }
+.threads-title {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-mid); margin-bottom: 12px;
+}
+.thread-item {
+  border: 1px solid var(--border); border-radius: var(--r);
+  overflow: hidden; margin-bottom: 8px;
+  transition: border-color 0.18s;
+}
+.thread-item:hover { border-color: var(--border-s); }
+.thread-toggle {
+  width: 100%; background: none; border: none;
+  display: flex; align-items: center; gap: 13px;
+  padding: 14px 18px; cursor: pointer; text-align: left;
+  font-family: inherit; transition: background 0.14s;
+}
+.thread-toggle:hover { background: rgba(255,255,255,0.022); }
+.thread-chevron {
+  font-size: 9px; color: var(--text-dim);
+  transition: transform 0.22s; flex-shrink: 0;
+}
+.thread-item.open .thread-chevron { transform: rotate(90deg); }
+.thread-info { flex: 1; min-width: 0; }
+.thread-time {
+  font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 4px;
+}
+.thread-thought {
+  font-size: 13px; font-weight: 300; font-style: italic;
+  color: var(--text-mid); line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.thread-badge {
+  font-size: 10px; font-weight: 600; color: var(--text-dim);
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 10px; flex-shrink: 0;
+}
+.thread-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+.thread-item.open .thread-body { max-height: 1600px; }
+.thread-inner { padding: 4px 18px 16px; display: flex; flex-direction: column; gap: 8px; }
+.mini-card {
+  background: rgba(255,255,255,0.022);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 13px 15px;
+}
+.mini-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.mini-name { font-size: 11.5px; font-weight: 500; color: var(--text-mid); }
+.mini-time { font-size: 10.5px; color: var(--text-dim); margin-left: auto; }
+.mini-text { font-size: 13px; font-weight: 300; line-height: 1.65; color: var(--text-mid); }
+.mini-foot { margin-top: 10px; }
+.mini-resonate {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 11px;
+  font-family: inherit; font-size: 11px; color: var(--text-dim);
+  cursor: pointer; transition: all 0.14s;
+}
+.mini-resonate:hover:not(.lit) { border-color: var(--border-s); color: var(--text-mid); }
+.mini-resonate.lit { background: var(--gold-bg); border-color: var(--gold-bd); color: var(--gold); }
+
+/* Footer */
+.app-footer { padding: 56px 0 32px; text-align: center; }
+.footer-ember { width: 20px; height: 20px; opacity: 0.3; margin: 0 auto 10px; }
+.footer-note { font-size: 11px; color: var(--text-dim); line-height: 1.65; }
+
+/* ─────────────────────────────────────────────────────────
+   JOIN BANNER
+───────────────────────────────────────────────────────── */
+#joinBanner {
+  position: fixed; bottom: calc(16px + var(--safe-bottom));
+  left: 50%; transform: translateX(-50%) translateY(130%);
+  width: calc(100% - 40px); max-width: 460px;
+  background: #13131e;
+  border: 1px solid var(--gold-bd);
+  border-radius: 20px; padding: 20px 22px 18px;
+  z-index: 490;
+  box-shadow: 0 12px 60px rgba(0,0,0,0.75), 0 0 0 1px rgba(232,201,122,0.06);
+  transition: transform 0.42s cubic-bezier(0.32,0.72,0,1), opacity 0.35s;
+  opacity: 0; pointer-events: none;
+}
+#joinBanner.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: all; }
+.join-head {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px;
+}
+.join-icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; }
+.join-copy { flex: 1; }
+.join-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.join-sub { font-size: 11px; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+.join-dismiss {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 20px; cursor: pointer; padding: 2px 4px; flex-shrink: 0;
+  line-height: 1; opacity: 0.5; transition: opacity 0.15s;
+}
+.join-dismiss:hover { opacity: 1; }
+.join-pace-row { display: flex; gap: 7px; margin-bottom: 14px; }
+.join-pace-btn {
+  flex: 1; padding: 9px 5px;
+  border-radius: 10px; border: 1px solid var(--border-s);
+  background: transparent; font-family: inherit;
+  font-size: 11.5px; font-weight: 500; color: var(--text-dim);
+  cursor: pointer; transition: all 0.14s; text-align: center;
+}
+.join-pace-btn:hover { color: var(--text-mid); border-color: var(--border-s); }
+.join-pace-btn.selected { background: var(--gold-bg); border-color: var(--gold-bd); color: var(--gold); }
+.join-cta-row { display: flex; align-items: center; gap: 14px; }
+.join-cta {
+  flex: 1; padding: 13px;
+  background: var(--gold); border: none; border-radius: 11px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  color: #09090f; cursor: pointer; transition: opacity 0.15s;
+  letter-spacing: 0.02em;
+}
+.join-cta:hover { opacity: 0.87; }
+.join-later {
+  background: none; border: none;
+  font-family: inherit; font-size: 12px; color: var(--text-dim);
+  cursor: pointer; white-space: nowrap; padding: 4px 0;
+  transition: color 0.15s;
+}
+.join-later:hover { color: var(--text-mid); }
+
+/* ── Confirm toast ── */
+#joinToast {
+  position: fixed; bottom: calc(16px + var(--safe-bottom));
+  left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1a1a24; border: 1px solid var(--gold-bd);
+  border-radius: 999px; padding: 11px 22px;
+  font-size: 13px; font-weight: 500; color: var(--gold);
+  z-index: 490; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  white-space: nowrap;
+}
+#joinToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Responsive */
+@media (max-width: 520px) {
+  .wrap { padding: 0 18px calc(80px + var(--safe-bottom)); }
+  .quote-hero { padding: 42px 0 34px; }
+  .thought-card, .form-wrap { padding-left: 20px; padding-right: 20px; }
+  .quote-body { font-size: 1.35rem; }
+  .card-time, .mini-time { display: none; }
+  .respond-btn { width: 100%; justify-content: center; margin-top: 4px; }
+  .thought-foot { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     ONBOARDING
+════════════════════════════════════════════════════ -->
+<div id="onboarding">
+
+  <!-- Screen 1: Welcome -->
+  <div class="ob-screen active" id="ob1">
+    <img src="icon.svg" class="ob-ember" alt="Tember">
+    <div class="ob-wordmark">Tember</div>
+    <div class="ob-headline">A daily practice<br>in purpose.</div>
+    <p class="ob-sub">A quote. A thought. A question — delivered at the pace you choose, and shared with people like you.</p>
+    <button class="ob-btn" onclick="obNext(2)">Get started →</button>
+  </div>
+
+  <!-- Screen 2: Pace -->
+  <div class="ob-screen" id="ob2">
+    <div class="ob-q">How often would you<br>like to be reminded?</div>
+    <div class="pace-options">
+      <div class="pace-opt" data-pace="hourly" onclick="selectPace(this)">
+        <div class="pace-radio"></div>
+        <div>
+          <div class="pace-name">Every hour</div>
+          <div class="pace-desc">The full experience — a new thought each hour.</div>
+        </div>
+      </div>
+      <div class="pace-opt" data-pace="3x" onclick="selectPace(this)">
+        <div class="pace-radio"></div>
+        <div>
+          <div class="pace-name">Three times a day</div>
+          <div class="pace-desc">Morning, midday, and evening.</div>
+        </div>
+      </div>
+      <div class="pace-opt selected" data-pace="daily" onclick="selectPace(this)">
+        <div class="pace-radio"></div>
+        <div>
+          <div class="pace-name">Once a day</div>
+          <div class="pace-desc">A single grounding moment each morning.</div>
+        </div>
+      </div>
+    </div>
+    <button class="ob-btn" onclick="obNext(3)">Continue →</button>
+  </div>
+
+  <!-- Screen 3: Name -->
+  <div class="ob-screen" id="ob3">
+    <div class="ob-q" style="margin-bottom:24px;">What should we<br>call you?</div>
+    <div class="ob-input-wrap">
+      <input id="obNameInput" class="ob-input" type="text" placeholder="Your first name" maxlength="40"
+        onkeydown="if(event.key==='Enter') obNext(4)">
+    </div>
+    <p class="ob-hint">Optional — used when you share sparks.</p>
+    <button class="ob-btn" onclick="obNext(4)" style="margin-top:8px;">Continue →</button>
+    <button class="ob-btn-ghost" onclick="obNext(4)">Skip</button>
+  </div>
+
+  <!-- Screen 4: Notifications -->
+  <div class="ob-screen" id="ob4">
+    <div class="notif-icon">🔔</div>
+    <div class="ob-q" style="margin-bottom:14px;">Stay connected<br>to your practice.</div>
+    <p class="ob-sub" style="margin-bottom:32px;">Enable notifications and Tember will send your thought at the pace you chose — even when the app is closed.</p>
+    <button class="ob-btn" onclick="obEnableNotifs()">Enable notifications</button>
+    <button class="ob-btn-ghost" onclick="obNext(5)">Not now</button>
+    <p class="ob-notif-note">Full background push requires hosting. Works now as an installed PWA on Android. iOS support active on 16.4+.</p>
+  </div>
+
+  <!-- Screen 5: Email -->
+  <div class="ob-screen" id="ob5">
+    <div class="ob-q" style="margin-bottom:14px;">Want Tember<br>in your inbox too?</div>
+    <p class="ob-sub" style="margin-bottom:24px;">Get your daily thought delivered by email. No noise — just the practice.</p>
+    <div class="ob-input-wrap">
+      <input id="obEmailInput" class="ob-input" type="email" placeholder="your@email.com"
+        onkeydown="if(event.key==='Enter') obFinish()">
+    </div>
+    <button class="ob-btn" onclick="obFinish()" style="margin-top:16px;">Start my practice →</button>
+    <button class="ob-email-skip" onclick="obFinish()">Skip for now</button>
+  </div>
+
+  <!-- Step dots -->
+  <div class="ob-step">
+    <div class="ob-dot on"  id="dot1"></div>
+    <div class="ob-dot"     id="dot2"></div>
+    <div class="ob-dot"     id="dot3"></div>
+    <div class="ob-dot"     id="dot4"></div>
+    <div class="ob-dot"     id="dot5"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     INSTALL BANNER
+════════════════════════════════════════════════════ -->
+<div id="installBanner">
+  <img src="icon.svg" class="install-icon" alt="Tember">
+  <div class="install-text">
+    <div class="install-title">Add Tember to your home screen</div>
+    <div class="install-sub">Install for offline access and notifications</div>
+  </div>
+  <button class="install-add" id="installAddBtn">Add</button>
+  <button class="install-dismiss" onclick="dismissInstall()">×</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SETTINGS PANEL
+════════════════════════════════════════════════════ -->
+<div id="settingsPanel">
+  <div class="settings-backdrop" onclick="closeSettings()"></div>
+  <div class="settings-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Settings</div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">Your pace</div>
+      <div class="sheet-pace-options">
+        <button class="sheet-pace-btn" data-p="hourly" onclick="setSheetPace('hourly',this)">Every hour</button>
+        <button class="sheet-pace-btn" data-p="3x"     onclick="setSheetPace('3x',this)">3× daily</button>
+        <button class="sheet-pace-btn on" data-p="daily"  onclick="setSheetPace('daily',this)">Once daily</button>
+      </div>
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">Your name</div>
+      <input class="sheet-input" id="sheetNameInput" type="text" placeholder="First name" maxlength="40">
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">Email</div>
+      <input class="sheet-input" id="sheetEmailInput" type="email" placeholder="your@email.com">
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-notif-row">
+        <div class="sheet-notif-info">
+          <div class="sheet-notif-label">Notifications</div>
+          <div class="sheet-notif-status" id="notifStatus">Tap to enable</div>
+        </div>
+        <button class="notif-toggle" id="notifToggle" onclick="toggleNotifSetting()"></button>
+      </div>
+    </div>
+
+    <button class="sheet-save" onclick="saveSettings()">Save</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════════════════ -->
+<div id="app">
+<div class="wrap">
+
+  <header class="app-header">
+    <div class="app-wordmark">
+      <img src="icon.svg" class="app-wordmark-icon" alt="">
+      <span class="app-wordmark-text">Tember</span>
+    </div>
+    <div class="header-right">
+      <div class="header-pill" id="hPill">—</div>
+      <button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <div class="greeting" id="greeting"></div>
+
+  <hr class="rule">
+
+  <!-- Quote -->
+  <section class="quote-hero">
+    <div class="hour-label">This hour's quote</div>
+    <div class="quote-inner">
+      <div class="quote-bg" aria-hidden="true">"</div>
+      <blockquote class="quote-body" id="qBody"></blockquote>
+      <div class="quote-attr"  id="qAttr"></div>
+      <button class="share-quote-btn" onclick="shareQuote()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share this quote
+      </button>
+    </div>
+  </section>
+
+  <!-- Bridge connecting quote to question -->
+  <div class="quote-bridge">
+    <div class="bridge-line"></div>
+    <span class="bridge-label"><span class="bridge-ember">✦</span> &nbsp;it raises a question</span>
+    <div class="bridge-line"></div>
+  </div>
+
+  <!-- Thought card -->
+  <div class="thought-card" id="thoughtCard">
+    <div class="thought-eyebrow">Reflect on this</div>
+    <p class="thought-body" id="tBody"></p>
+    <div class="thought-foot">
+      <div class="thought-timer">
+        <div class="pulse-dot"></div>
+        <span id="tTimer"></span>
+      </div>
+      <button class="respond-btn" onclick="toggleForm()">Respond to this thought →</button>
+    </div>
+  </div>
+
+  <!-- Inline form -->
+  <div class="form-wrap" id="formWrap">
+    <div class="form-context" id="formContext"></div>
+    <textarea id="tInput" placeholder="What comes up for you?" maxlength="500"></textarea>
+    <div class="tag-row">
+      <span class="tag-label">How did it land?</span>
+      <button class="tag-btn" data-t="resonated" onclick="pickTag('resonated',this)">✦ This landed</button>
+      <button class="tag-btn" data-t="with-it"   onclick="pickTag('with-it',this)">◎ Still with it</button>
+      <button class="tag-btn" data-t="missed"    onclick="pickTag('missed',this)">· Missed me</button>
+    </div>
+    <div class="form-row">
+      <input id="nInput" type="text" placeholder="Your name (optional)" maxlength="40">
+      <button class="btn-cancel" onclick="toggleForm()">Cancel</button>
+      <button class="btn-submit" onclick="submitSpark()">Share →</button>
+    </div>
+  </div>
+
+  <!-- Current feed -->
+  <section class="feed-section">
+    <div class="feed-header">
+      <span class="feed-title">Responses to this question</span>
+      <span class="feed-count" id="feedCount"></span>
+    </div>
+    <div class="feed" id="feed"></div>
+  </section>
+
+  <!-- Past threads -->
+  <section class="threads-section">
+    <div class="threads-title">Previous threads</div>
+    <div id="threadsList"></div>
+  </section>
+
+  <footer class="app-footer">
+    <img src="icon.svg" class="footer-ember" alt="">
+    <div class="footer-note">
+      A new thought every hour.<br>
+      Every response lives in its thread — then becomes history.
+    </div>
+  </footer>
+
+</div><!-- /wrap -->
+</div><!-- /app -->
+
+<!-- JOIN BANNER -->
+<div id="joinBanner">
+  <div class="join-head">
+    <img src="icon.svg" class="join-icon" alt="Tember">
+    <div class="join-copy">
+      <div class="join-title">Start your practice</div>
+      <div class="join-sub">A purpose thought, at the pace you choose.</div>
+    </div>
+    <button class="join-dismiss" onclick="dismissJoin()" aria-label="Dismiss">×</button>
+  </div>
+  <div class="join-pace-row">
+    <button class="join-pace-btn selected" data-p="daily"  onclick="selectJoinPace(this)">Once daily</button>
+    <button class="join-pace-btn"          data-p="3x"     onclick="selectJoinPace(this)">3× daily</button>
+    <button class="join-pace-btn"          data-p="hourly" onclick="selectJoinPace(this)">Every hour</button>
+  </div>
+  <div class="join-cta-row">
+    <button class="join-cta" onclick="startFromBanner()">Get notified →</button>
+    <button class="join-later" onclick="dismissJoin()">maybe later</button>
+  </div>
+</div>
+
+<!-- CONFIRM TOAST -->
+<div id="joinToast">✦ You're in — first thought coming soon.</div>
+
+<!-- SHARE MODAL -->
+<div id="shareModal">
+  <div class="share-backdrop" onclick="closeShare()"></div>
+  <div class="share-inner">
+    <div class="share-card-preview">
+      <canvas id="shareCanvas"></canvas>
+    </div>
+    <div class="share-actions">
+      <button class="share-action-btn share-action-primary" id="shareNativeBtn" onclick="nativeShare()">Share →</button>
+      <button class="share-action-btn share-action-secondary" onclick="downloadCard()">Save image</button>
+    </div>
+    <button class="share-close" onclick="closeShare()">Close</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const QUOTES = [
+  { t:"Don't ask what the world needs. Ask what makes you come alive — because what the world needs is people who have come alive.", a:"Howard Thurman" },
+  { t:"The two most important days in your life are the day you are born and the day you find out why.", a:"Mark Twain" },
+  { t:"He who has a why to live can bear almost any how.", a:"Friedrich Nietzsche" },
+  { t:"Life is never made unbearable by circumstances, but only by lack of meaning and purpose.", a:"Viktor Frankl" },
+  { t:"The purpose of life is not to be happy. It is to be useful, to be honorable, to be compassionate.", a:"Ralph Waldo Emerson" },
+  { t:"Your work is to discover your work and then with all your heart to give yourself to it.", a:"The Buddha" },
+  { t:"We are here to add what we can to life, not to get what we can from it.", a:"William Osler" },
+  { t:"Efforts and courage are not enough without purpose and direction.", a:"John F. Kennedy" },
+  { t:"The place you are called to is where your deep gladness and the world's deep hunger meet.", a:"Frederick Buechner" },
+  { t:"To live is to choose. But to choose well, you must know who you are and what you stand for.", a:"Kofi Annan" },
+  { t:"The soul which has no fixed purpose in life is lost; to be everywhere, is to be nowhere.", a:"Michel de Montaigne" },
+  { t:"It is not enough to have lived. We should be determined to live for something.", a:"Winston Churchill" },
+  { t:"One life is all we have and we live it as we believe in living it.", a:"Joan of Arc" },
+  { t:"The mystery of human existence lies not in just staying alive, but in finding something to live for.", a:"Fyodor Dostoevsky" },
+  { t:"What lies behind us and what lies before us are tiny matters compared to what lies within us.", a:"Ralph Waldo Emerson" },
+  { t:"We must be willing to let go of the life we planned so as to have the life that is waiting for us.", a:"Joseph Campbell" },
+  { t:"The secret of man's being is not only to live but to have something to live for.", a:"Fyodor Dostoevsky" },
+  { t:"In the middle of every difficulty lies opportunity.", a:"Albert Einstein" },
+  { t:"You must be the change you wish to see in the world.", a:"Mahatma Gandhi" },
+  { t:"The most common form of despair is not being who you are.", a:"Søren Kierkegaard" },
+  { t:"Authenticity is a collection of choices we have to make every day.", a:"Brené Brown" },
+  { t:"Curiosity is the wick in the candle of learning.", a:"William Arthur Ward" },
+  { t:"Daring greatly means the courage to be vulnerable — to show up and be seen.", a:"Brené Brown" },
+  { t:"The world changes one courageous conversation at a time.", a:"Margaret Wheatley" },
+];
+
+const THOUGHTS = [
+  "What would you do today if you knew it would matter to someone ten years from now?",
+  "Purpose isn't found — it's built, one choice at a time.",
+  "The small things you do consistently reveal more about your calling than the big things you dream about.",
+  "Who needs something only you can give?",
+  "What would you still do even if no one was watching — and no one would ever know?",
+  "You are most alive when you are most useful.",
+  "Your purpose lives at the intersection of your pain and your passion.",
+  "The world doesn't need more people playing it safe.",
+  "What did your younger self believe you would become?",
+  "The most powerful question: what problem am I uniquely suited to solve?",
+  "Meaning is made in moments of genuine connection.",
+  "A purposeful life is rarely comfortable. It is almost always worthwhile.",
+  "What you consistently return to — even when life gets hard — that is your calling.",
+  "To live without direction is to wander. To live with purpose is to belong.",
+  "Your contribution doesn't have to be grand. It has to be honest.",
+  "Purpose is not a destination. It's a direction.",
+  "What story do you want people to tell about you when you're not in the room?",
+  "The version of yourself your community most needs — who is that person?",
+  "You become who you spend time with and what you spend time on.",
+  "Your purpose is not separate from your daily life. It lives inside it.",
+  "What would you regret not trying?",
+  "What gifts have you been too afraid to share?",
+  "Every person carries a question the world needs answered. What is yours?",
+  "Growth happens right at the edge of discomfort — not beyond it, not short of it.",
+];
+
+const TAG_LABELS = { resonated:"✦ This landed", "with-it":"◎ Still with it", missed:"· Missed me" };
+
+// Seeds only populate PAST threads (offset 1+), never the live current-hour feed.
+// Each pool is loosely matched to the type of thought at that offset.
+const SEED_POOLS = [
+  // offset 1
+  [
+    { text:"I keep coming back to this. The answer I want to give and the honest answer are very different.", name:"Jordan M.", tag:"resonated", r:14 },
+    { text:"Three years into a career that looks good on paper. This question found me at exactly the right time.", name:"Anonymous", tag:"resonated", r:28 },
+    { text:"I wrote my answer down, crossed it out, and wrote it again. The second one was truer.", name:"Simone A.", tag:"with-it", r:9 },
+  ],[
+    // offset 2
+    { text:"The version of this I told myself five years ago and what I believe today — still reconciling them.", name:"Priya S.", tag:"with-it", r:19 },
+    { text:"I wrote three sentences and deleted them all. The fourth one was true.", name:"Deshawn R.", tag:"resonated", r:11 },
+    { text:"My grandmother said something almost exactly like this once. I didn't understand it then.", name:"Marcus T.", tag:"resonated", r:33 },
+  ],[
+    // offset 3
+    { text:"The honest answer to this is uncomfortable. I'm sitting with it anyway.", name:"Aaliyah K.", tag:"with-it", r:7 },
+    { text:"Moving across the country alone at 22 taught me more about this than anything I ever read.", name:"Carlos V.", tag:"resonated", r:41 },
+    { text:"Didn't connect with this one today. Maybe tomorrow.", name:"Anonymous", tag:"missed", r:4 },
+  ],[
+    // offset 4
+    { text:"This question has been living in me for months. Seeing it here felt like permission to finally answer.", name:"Tanya W.", tag:"resonated", r:52 },
+    { text:"The thing I keep avoiding is the thing this is pointing directly at.", name:"Anonymous", tag:"with-it", r:23 },
+    { text:"I've been doing the right work for the wrong reasons. That's what came up.", name:"Remi A.", tag:"resonated", r:18 },
+  ],[
+    // offset 5
+    { text:"Short answer: I don't know yet. Long answer: I'm closer than I was yesterday.", name:"Jordan K.", tag:"with-it", r:8 },
+    { text:"I called my dad after reading this. First real conversation we've had in months.", name:"Marcus B.", tag:"resonated", r:67 },
+    { text:"This one stopped me mid-morning. Had to put my phone down and just think.", name:"Anonymous", tag:"resonated", r:14 },
+  ],
+];
+
+// ── USER PREFS ────────────────────────────────────────────────────────────────
+const pref = {
+  get: (k, def) => { try { const v = localStorage.getItem('tmb_'+k); return v !== null ? JSON.parse(v) : def; } catch(e) { return def; } },
+  set: (k, v)   => { try { localStorage.setItem('tmb_'+k, JSON.stringify(v)); } catch(e) {} },
+};
+
+// ── TIME ──────────────────────────────────────────────────────────────────────
+const getHour = () => new Date().getHours();
+const minsLeft = () => 60 - new Date().getMinutes();
+function hourKey(offset = 0) {
+  const d = new Date(Date.now() - offset * 3600000);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}`;
+}
+function hourRange(offset = 0) {
+  const d = new Date(Date.now() - offset * 3600000);
+  const h = d.getHours();
+  const fmt = n => (n%12||12)+':00 '+(n>=12?'PM':'AM');
+  return fmt(h) + ' – ' + fmt((h+1)%24);
+}
+function thoughtFor(offset = 0) {
+  const h = (getHour() - offset + 48) % 24;
+  return THOUGHTS[h % THOUGHTS.length];
+}
+function timeAgo(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60)+'m ago';
+  if (s < 86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+// ── SEEDS (past threads only — offset 1 through 5) ───────────────────────────
+const SEEDS = [];
+SEED_POOLS.forEach((pool, idx) => {
+  const offset = idx + 1; // seeds start at 1 hour ago, never in live feed
+  const key = hourKey(offset);
+  pool.forEach((s, i) => SEEDS.push({
+    id: -(offset*10+i+1), key,
+    text: s.text, name: s.name, tag: s.tag,
+    ts: Date.now() - offset*3600000 - (10+i*14)*60000,
+    r: s.r,
+  }));
+});
+
+// ── APP STATE ─────────────────────────────────────────────────────────────────
+let userSparks = pref.get('sparks', []);
+let resonated  = new Set(pref.get('resonated', []));
+let selectedTag = null;
+let openThreads = new Set();
+let notifTimer  = null;
+let deferredInstall = null;
+
+// ── ONBOARDING ────────────────────────────────────────────────────────────────
+let currentOb = 1;
+let obPace = pref.get('pace', 'daily');
+
+function obNext(screen) {
+  document.getElementById('ob'+currentOb).classList.remove('active');
+  currentOb = screen;
+  document.getElementById('ob'+screen).classList.add('active');
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('dot'+i).classList.toggle('on', i === screen);
+  }
+  if (screen === 3) setTimeout(() => document.getElementById('obNameInput').focus(), 300);
+  if (screen === 5) setTimeout(() => document.getElementById('obEmailInput').focus(), 300);
+}
+
+function selectPace(el) {
+  document.querySelectorAll('.pace-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  obPace = el.dataset.pace;
+}
+
+async function obEnableNotifs() {
+  if (!('Notification' in window)) { obNext(5); return; }
+  const p = await Notification.requestPermission();
+  pref.set('notif', p === 'granted');
+  updateNotifUI(p === 'granted');
+  if (p === 'granted') scheduleNotif();
+  obNext(5);
+}
+
+function obFinish() {
+  const name  = document.getElementById('obNameInput').value.trim();
+  const email = document.getElementById('obEmailInput').value.trim();
+  pref.set('name',     name  || '');
+  pref.set('email',    email || '');
+  pref.set('pace',     obPace);
+  pref.set('onboarded', true);
+  launchApp();
+}
+
+function launchApp() {
+  document.getElementById('onboarding').classList.add('out');
+  setTimeout(() => {
+    document.getElementById('onboarding').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    syncSettingsSheet();
+    renderAll();
+    showInstallBannerIfReady();
+    showJoinBannerIfNeeded();
+  }, 500);
+}
+
+// ── JOIN BANNER ───────────────────────────────────────────────────────────────
+let joinBannerPace = 'daily';
+
+function showJoinBannerIfNeeded() {
+  // Show if notifications are not set up yet
+  const notifOn = pref.get('notif', false) && Notification.permission === 'granted';
+  if (notifOn || pref.get('joinDismissed', false)) return;
+  setTimeout(() => document.getElementById('joinBanner').classList.add('show'), 5000);
+}
+
+function dismissJoin() {
+  document.getElementById('joinBanner').classList.remove('show');
+  pref.set('joinDismissed', true);
+}
+
+function selectJoinPace(btn) {
+  document.querySelectorAll('.join-pace-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  joinBannerPace = btn.dataset.p;
+}
+
+async function startFromBanner() {
+  // Save the chosen pace
+  pref.set('pace', joinBannerPace);
+  // Sync settings UI
+  document.querySelectorAll('.sheet-pace-btn').forEach(b =>
+    b.classList.toggle('on', b.dataset.p === joinBannerPace));
+  // Sync onboarding pace UI
+  document.querySelectorAll('.pace-opt').forEach(o =>
+    o.classList.toggle('selected', o.dataset.pace === joinBannerPace));
+  obPace = joinBannerPace;
+
+  // Request notification permission
+  let granted = false;
+  if ('Notification' in window) {
+    const p = await Notification.requestPermission();
+    granted = p === 'granted';
+    pref.set('notif', granted);
+    updateNotifUI(granted);
+    if (granted) scheduleNotif();
+  }
+
+  // Hide banner, show toast
+  document.getElementById('joinBanner').classList.remove('show');
+  const toast = document.getElementById('joinToast');
+  if (granted) {
+    toast.textContent = '✦ You\'re in — first thought coming soon.';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  } else {
+    // Notifications blocked — open settings so they can still save name/email
+    openSettings();
+  }
+  pref.set('joinDismissed', true);
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
+function scheduleNotif() {
+  if (Notification.permission !== 'granted') return;
+  clearTimeout(notifTimer);
+  const pace = pref.get('pace', 'daily');
+  let delayMs;
+  if      (pace === 'hourly') delayMs = minsLeft() * 60000;
+  else if (pace === '3x')     delayMs = 4 * 3600000;
+  else                         delayMs = (() => {
+    const t = new Date(); t.setDate(t.getDate()+1); t.setHours(8,0,0,0);
+    return t - Date.now();
+  })();
+  notifTimer = setTimeout(() => {
+    const h = getHour();
+    const thought = THOUGHTS[h % THOUGHTS.length];
+    try {
+      new Notification('Tember', {
+        body: thought,
+        icon: 'icon.svg',
+        tag:  'tember-prompt',
+      });
+    } catch(e) {}
+    scheduleNotif();
+  }, delayMs);
+}
+
+function updateNotifUI(on) {
+  const toggle = document.getElementById('notifToggle');
+  const status = document.getElementById('notifStatus');
+  if (!toggle) return;
+  toggle.classList.toggle('on', on);
+  if (status) status.textContent = on ? 'On — arrives at your chosen pace' : 'Off';
+}
+
+async function toggleNotifSetting() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    const on = pref.get('notif', false);
+    pref.set('notif', !on);
+    updateNotifUI(!on);
+    if (!on) scheduleNotif(); else clearTimeout(notifTimer);
+  } else {
+    const p = await Notification.requestPermission();
+    pref.set('notif', p === 'granted');
+    updateNotifUI(p === 'granted');
+    if (p === 'granted') scheduleNotif();
+  }
+}
+
+// ── INSTALL PWA ───────────────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+});
+
+function showInstallBannerIfReady() {
+  if (!deferredInstall || pref.get('installDismissed', false)) return;
+  setTimeout(() => {
+    if (deferredInstall) document.getElementById('installBanner').classList.add('show');
+  }, 4000);
+}
+
+document.getElementById('installAddBtn').addEventListener('click', async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  const { outcome } = await deferredInstall.userChoice;
+  if (outcome === 'accepted') deferredInstall = null;
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+function dismissInstall() {
+  document.getElementById('installBanner').classList.remove('show');
+  pref.set('installDismissed', true);
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function openSettings()  { document.getElementById('settingsPanel').classList.add('open'); syncSettingsSheet(); }
+function closeSettings() { document.getElementById('settingsPanel').classList.remove('open'); }
+
+function syncSettingsSheet() {
+  document.getElementById('sheetNameInput').value  = pref.get('name', '');
+  document.getElementById('sheetEmailInput').value = pref.get('email', '');
+  const p = pref.get('pace', 'daily');
+  document.querySelectorAll('.sheet-pace-btn').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+  updateNotifUI(pref.get('notif', false) && Notification.permission === 'granted');
+}
+
+function setSheetPace(p, btn) {
+  document.querySelectorAll('.sheet-pace-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function saveSettings() {
+  const p = document.querySelector('.sheet-pace-btn.on')?.dataset.p || 'daily';
+  pref.set('name',  document.getElementById('sheetNameInput').value.trim());
+  pref.set('email', document.getElementById('sheetEmailInput').value.trim());
+  pref.set('pace',  p);
+  if (pref.get('notif', false)) scheduleNotif();
+  closeSettings();
+  renderGreeting();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderGreeting() {
+  const name = pref.get('name', '');
+  const h = getHour();
+  const tod = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').innerHTML =
+    name ? `${tod}, <span>${name}</span>.` : '';
+}
+
+function renderHero() {
+  const h = getHour();
+  const q = QUOTES[h % QUOTES.length];
+  const t = THOUGHTS[h % THOUGHTS.length];
+  document.getElementById('qBody').textContent = '“' + q.t + '”';
+  document.getElementById('qAttr').textContent = '— ' + q.a;
+  document.getElementById('tBody').textContent = t;
+  document.getElementById('hPill').textContent = hourRange();
+  const m = minsLeft();
+  document.getElementById('tTimer').textContent = `Refreshes in ${m} minute${m!==1?'s':''}`;
+}
+
+function renderFeed() {
+  // Live feed = only real user sparks for this exact hour
+  const key = hourKey(0);
+  const all = userSparks.filter(s => s.key === key);
+  const el  = document.getElementById('feed');
+  const cnt = document.getElementById('feedCount');
+  cnt.textContent = all.length ? `${all.length} reflection${all.length!==1?'s':''} this hour` : '';
+  if (!all.length) {
+    el.innerHTML = '<div class="empty">No one has responded yet.<br><span style="font-size:11px;opacity:0.6;">The question is above — be the first to answer it.</span></div>';
+    return;
+  }
+  el.innerHTML = all.map(s => {
+    const lit   = resonated.has(s.id);
+    const badge = s.tag ? `<span class="badge badge-${s.tag}">${TAG_LABELS[s.tag]}</span>` : '';
+    return `<div class="spark-card">
+      <div class="card-top">${badge}<span class="card-name">${s.name}</span><span class="card-time">${timeAgo(s.ts)}</span></div>
+      <p class="card-text">${s.text}</p>
+      <div class="card-foot"><button class="resonate-btn${lit?' lit':''}" onclick="onResonate(${s.id})">✦&nbsp;${s.r}</button></div>
+    </div>`;
+  }).join('');
+}
+
+function renderThreads() {
+  const all  = [...userSparks, ...SEEDS];
+  const list = document.getElementById('threadsList');
+  const rows = [];
+  for (let offset = 1; offset <= 5; offset++) {
+    const key    = hourKey(offset);
+    const sparks = all.filter(s => s.key === key);
+    if (!sparks.length) continue;
+    const thought = thoughtFor(offset);
+    const isOpen  = openThreads.has(offset);
+    const miniCards = sparks.map(s => {
+      const lit   = resonated.has(s.id);
+      const badge = s.tag ? `<span class="badge badge-${s.tag}" style="font-size:9px;padding:2px 7px">${TAG_LABELS[s.tag]}</span>` : '';
+      return `<div class="mini-card">
+        <div class="mini-top">${badge}<span class="mini-name">${s.name}</span><span class="mini-time">${timeAgo(s.ts)}</span></div>
+        <p class="mini-text">${s.text}</p>
+        <div class="mini-foot"><button class="mini-resonate${lit?' lit':''}" onclick="onResonate(${s.id})">✦&nbsp;${s.r}</button></div>
+      </div>`;
+    }).join('');
+    rows.push(`<div class="thread-item${isOpen?' open':''}" id="th${offset}">
+      <button class="thread-toggle" onclick="toggleThread(${offset})">
+        <span class="thread-chevron">▶</span>
+        <div class="thread-info">
+          <div class="thread-time">${hourRange(offset)}</div>
+          <div class="thread-thought">"${thought}"</div>
+        </div>
+        <span class="thread-badge">${sparks.length} spark${sparks.length!==1?'s':''}</span>
+      </button>
+      <div class="thread-body"><div class="thread-inner">${miniCards}</div></div>
+    </div>`);
+  }
+  list.innerHTML = rows.length
+    ? rows.join('')
+    : '<div style="font-size:13px;color:var(--text-dim);padding:4px 0 12px;">Previous threads will appear here as the hours pass.</div>';
+}
+
+function toggleThread(offset) {
+  openThreads.has(offset) ? openThreads.delete(offset) : openThreads.add(offset);
+  renderThreads();
+}
+
+function renderAll() {
+  renderGreeting();
+  renderHero();
+  renderFeed();
+  renderThreads();
+}
+
+// ── FORM ──────────────────────────────────────────────────────────────────────
+function toggleForm() {
+  const fw = document.getElementById('formWrap');
+  const tc = document.getElementById('thoughtCard');
+  const open = fw.classList.toggle('open');
+  tc.classList.toggle('form-open', open);
+  if (open) {
+    const t = THOUGHTS[getHour() % THOUGHTS.length];
+    document.getElementById('formContext').innerHTML = `<strong>Your response to:</strong> "${t}"`;
+    setTimeout(() => document.getElementById('tInput').focus(), 60);
+    fw.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+}
+function pickTag(t, btn) {
+  if (selectedTag === t) { selectedTag = null; document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn'); return; }
+  selectedTag = t;
+  document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn');
+  btn.classList.add('on-'+t);
+}
+function submitSpark() {
+  const text = document.getElementById('tInput').value.trim();
+  if (!text) { document.getElementById('tInput').focus(); return; }
+  const name = document.getElementById('nInput').value.trim() || pref.get('name','') || 'Anonymous';
+  const spark = { id:Date.now(), key:hourKey(0), text, name, tag:selectedTag, ts:Date.now(), r:0 };
+  userSparks.unshift(spark);
+  pref.set('sparks', userSparks);
+  document.getElementById('tInput').value = '';
+  document.getElementById('nInput').value = '';
+  document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn');
+  selectedTag = null;
+  toggleForm();
+  renderFeed();
+}
+
+// ── RESONATE ──────────────────────────────────────────────────────────────────
+function onResonate(id) {
+  if (resonated.has(id)) return;
+  resonated.add(id);
+  pref.set('resonated', [...resonated]);
+  [...SEEDS, ...userSparks].forEach(s => { if(s.id===id) s.r++; });
+  renderFeed(); renderThreads();
+}
+
+// ── SHARE CARD ────────────────────────────────────────────────────────────────
+function shareQuote() {
+  document.getElementById('shareModal').classList.add('open');
+  document.fonts.ready.then(renderShareCard);
+}
+function closeShare() {
+  document.getElementById('shareModal').classList.remove('open');
+}
+
+function wrapCanvasText(ctx, text, maxW) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = word; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function renderShareCard() {
+  const canvas = document.getElementById('shareCanvas');
+  const W = 1080, H = 1080;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const h = getHour();
+  const q = QUOTES[h % QUOTES.length];
+
+  // ── Background ──
+  ctx.fillStyle = '#09090f';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Radial ember glow ──
+  const glow = ctx.createRadialGradient(W/2, H*0.44, 0, W/2, H*0.44, W*0.62);
+  glow.addColorStop(0, 'rgba(232,201,122,0.11)');
+  glow.addColorStop(1, 'rgba(232,201,122,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Ember glyph (top-center) ──
+  function drawEmber(cx, cy, size) {
+    ctx.save();
+    const eg = ctx.createRadialGradient(cx - size*0.1, cy - size*0.15, 0, cx, cy, size);
+    eg.addColorStop(0,   'rgba(253,240,192,0.9)');
+    eg.addColorStop(0.5, 'rgba(232,201,122,0.8)');
+    eg.addColorStop(1,   'rgba(200,160,64,0.6)');
+    ctx.fillStyle = eg;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size);
+    ctx.bezierCurveTo(cx - size*0.55, cy - size*0.3, cx - size*0.55, cy + size*0.3, cx, cy + size);
+    ctx.bezierCurveTo(cx + size*0.55, cy + size*0.3, cx + size*0.55, cy - size*0.3, cx, cy - size);
+    ctx.fill();
+    ctx.restore();
+  }
+  drawEmber(W/2, 112, 26);
+
+  // ── TEMBER wordmark (below ember) ──
+  ctx.font = '600 20px Inter, -apple-system, sans-serif';
+  try { ctx.letterSpacing = '0.28em'; } catch(e) {}
+  ctx.fillStyle = '#e8c97a';
+  const wmText = 'TEMBER';
+  const wmW = ctx.measureText(wmText).width;
+  ctx.fillText(wmText, W/2 - wmW/2, 162);
+  try { ctx.letterSpacing = '0'; } catch(e) {}
+
+  // ── Top rule ──
+  ctx.strokeStyle = 'rgba(232,201,122,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, 190); ctx.lineTo(W-80, 190); ctx.stroke();
+
+  // ── Decorative large quote mark ──
+  ctx.font = 'italic 260px "Playfair Display", Georgia, serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.022)';
+  ctx.fillText('“', 52, 520);
+
+  // ── Quote text ──
+  const PAD = 96;
+  const MAX_W = W - PAD * 2;
+  const len = q.t.length;
+  const fSize = len > 160 ? 40 : len > 110 ? 46 : len > 70 ? 52 : 58;
+  ctx.font = `italic 500 ${fSize}px "Playfair Display", Georgia, serif`;
+  ctx.fillStyle = '#f0ede6';
+  const lines = wrapCanvasText(ctx, '“' + q.t + '”', MAX_W);
+  const lineH = fSize * 1.44;
+  const totalH = lines.length * lineH;
+  let y = (H - totalH) / 2 + fSize * 0.35;
+  lines.forEach(line => { ctx.fillText(line, PAD, y); y += lineH; });
+
+  // ── Author ──
+  y += 32;
+  ctx.font = '500 19px Inter, -apple-system, sans-serif';
+  ctx.fillStyle = '#6a6460';
+  try { ctx.letterSpacing = '0.12em'; } catch(e) {}
+  ctx.fillText('— ' + q.a.toUpperCase(), PAD, y);
+  try { ctx.letterSpacing = '0'; } catch(e) {}
+
+  // ── Bottom rule ──
+  ctx.strokeStyle = 'rgba(232,201,122,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, H-104); ctx.lineTo(W-80, H-104); ctx.stroke();
+
+  // ── Tagline (left) ──
+  ctx.font = '300 18px Inter, -apple-system, sans-serif';
+  ctx.fillStyle = '#3a3a38';
+  ctx.fillText('A daily practice in purpose', PAD, H - 68);
+
+  // ── URL (right) ──
+  ctx.font = '500 18px Inter, -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(232,201,122,0.45)';
+  const urlText = 'tember.app';
+  const urlW = ctx.measureText(urlText).width;
+  ctx.fillText(urlText, W - PAD - urlW, H - 68);
+}
+
+async function nativeShare() {
+  const canvas = document.getElementById('shareCanvas');
+  const q = QUOTES[getHour() % QUOTES.length];
+  canvas.toBlob(async blob => {
+    const file = new File([blob], 'tember-quote.png', { type: 'image/png' });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: 'Tember',
+          text: `"${q.t}" — ${q.a}\n\nA daily practice in purpose · tember.app`,
+          files: [file],
+        });
+        return;
+      } catch(e) {}
+    }
+    downloadCard(); // fallback
+  }, 'image/png');
+}
+
+function downloadCard() {
+  const canvas = document.getElementById('shareCanvas');
+  const a = document.createElement('a');
+  a.download = 'tember-quote.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+// Check onboarding
+if (pref.get('onboarded', false)) {
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  syncSettingsSheet();
+  renderAll();
+  if (pref.get('notif', false) && Notification.permission === 'granted') scheduleNotif();
+  showInstallBannerIfReady();
+}
+
+// Countdown
+setInterval(() => {
+  const m = minsLeft();
+  const el = document.getElementById('tTimer');
+  if (el) el.textContent = `Refreshes in ${m} minute${m!==1?'s':''}`;
+  renderFeed();
+}, 60000);
+
+// Hour flip
+let lastH = getHour();
+setInterval(() => {
+  const h = getHour();
+  if (h !== lastH) { lastH = h; renderAll(); }
+}, 30000);
+</script>
+</body>
+</html>
