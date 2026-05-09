@@ -456,6 +456,22 @@ body::before {
 }
 .sheet-message.ok { color: var(--gold); }
 .sheet-message.err { color: var(--rose); }
+.sheet-helper {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin-top: -2px;
+}
+.sheet-reminder-status {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+.sheet-reminder-status strong {
+  color: var(--text-mid);
+  font-weight: 500;
+}
 
 /* ─────────────────────────────────────────────────────────
    MAIN APP
@@ -553,6 +569,30 @@ hr.rule { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 }
 .about-copy p + p { margin-top: 18px; }
 .about-copy a { color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--gold-bd); }
+.about-install-link {
+  display: inline-block;
+  margin: 8px 0 26px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gold); text-decoration: none;
+  border-bottom: 1px solid var(--gold-bd);
+}
+.about-install {
+  margin-top: 36px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+.about-install-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 12px;
+}
+.about-install-list {
+  margin: 0; padding-left: 18px;
+  font-size: 13px; font-weight: 300;
+  line-height: 1.8; color: var(--text-mid);
+}
+.about-install-list + .about-install-title { margin-top: 22px; }
 .about-feedback {
   margin-top: 38px;
   border-top: 1px solid var(--border);
@@ -1060,12 +1100,10 @@ input#nInput:focus { outline: none; }
 
   <!-- Screen 5: Email -->
   <div class="ob-screen" id="ob5">
-    <div class="ob-q" style="margin-bottom:14px;">Where should<br>Tember find you?</div>
-    <p class="ob-sub" style="margin-bottom:24px;">Get your thought by email or phone. No noise — just the practice.</p>
+    <div class="ob-q" style="margin-bottom:14px;">Where should<br>Tember write you?</div>
+    <p class="ob-sub" style="margin-bottom:24px;">Get a quiet email reminder at the pace you choose.</p>
     <div class="ob-input-wrap">
       <input id="obEmailInput" class="ob-input" type="email" placeholder="your@email.com"
-        onkeydown="if(event.key==='Enter') obFinish()">
-      <input id="obPhoneInput" class="ob-input" type="tel" placeholder="phone number"
         onkeydown="if(event.key==='Enter') obFinish()">
     </div>
     <button class="ob-btn" onclick="obFinish()" style="margin-top:16px;">Start my practice →</button>
@@ -1120,9 +1158,10 @@ input#nInput:focus { outline: none; }
     </div>
 
     <div class="sheet-section">
-      <div class="sheet-label">Email or phone</div>
+      <div class="sheet-label">Email reminders</div>
       <input class="sheet-input" id="sheetEmailInput" type="email" placeholder="your@email.com">
-      <input class="sheet-input" id="sheetPhoneInput" type="tel" placeholder="phone number">
+      <div class="sheet-helper">Email reminders are saved to Tember. Browser notifications stay on this device.</div>
+      <div class="sheet-reminder-status" id="reminderStatus"></div>
     </div>
 
     <div class="sheet-section">
@@ -1136,7 +1175,7 @@ input#nInput:focus { outline: none; }
     </div>
 
     <button class="sheet-save" onclick="saveSettings()">Save</button>
-    <button class="sheet-cancel-sub" onclick="cancelNotifications()">Cancel email/phone notifications</button>
+    <button class="sheet-cancel-sub" onclick="cancelNotifications()">Cancel email reminders</button>
     <div class="sheet-message" id="settingsMessage"></div>
   </div>
 </div>
@@ -1242,13 +1281,28 @@ input#nInput:focus { outline: none; }
 
   <main id="aboutView" class="view about-view" hidden>
     <div class="about-kicker">About Tember</div>
-    <h1 class="about-title">Past thought, present reflection, possible purpose.</h1>
+    <h1 class="about-title">Past thoughts and present reflections as bridges to purposeful practice.</h1>
+    <a class="about-install-link" href="#installTember" onclick="scrollToInstall(event)">Add Tember to your phone</a>
     <div class="about-copy">
-      <p>Tember is about reveling in the creative tension between past and purpose.</p>
-      <p>Quotes invite reflection on thoughts and ideas of the past that may find relevance in the present moment. By engaging with past thoughts, one can express a current perspective, which can, at times, chart a path forward.</p>
-      <p>In this way, Tember may be a purposeful practice. Lightweight, personal or social, depending on how one chooses to use it. I hope it brings you joy.</p>
-      <p>Tember is a creation of <a href="https://www.anthonyburrow.com" target="_blank" rel="noopener">Anthony Burrow</a>, who studies purpose and appreciates creating ways for people to sense more of it in their lives.</p>
+      <p>Tember revels in the creative tension between the past and one's purpose.</p>
+      <p>Quotes update every hour, inviting reflection and potential relevance to be found in the present moment. You're welcome to share an insight as prompted. Or, just enjoy this space and observe as others engage with it.</p>
+      <p>Tember is created and hosted by <a href="mailto:alb325@cornell.edu">Anthony Burrow</a>, who studies purpose and appreciates creating ways for people to sense more of it in their lives.</p>
     </div>
+
+    <section class="about-install" id="installTember">
+      <div class="about-install-title">Add Tember to your phone</div>
+      <ol class="about-install-list">
+        <li>Open tember.vercel.app in Safari on iPhone, or Chrome on Android.</li>
+        <li>Tap Share, then Add to Home Screen.</li>
+        <li>Keep the name Tember, then tap Add.</li>
+      </ol>
+      <div class="about-install-title">About reminders</div>
+      <ol class="about-install-list">
+        <li>Email reminders can be saved in Settings.</li>
+        <li>Device notifications require your browser or phone to allow them.</li>
+        <li>You can cancel email reminders from Settings anytime.</li>
+      </ol>
+    </section>
 
     <form class="about-feedback" onsubmit="submitFeedback(event)">
       <div class="about-feedback-title">Feedback is welcome</div>
@@ -1647,22 +1701,42 @@ function showSettingsMessage(text, kind = '') {
 
 function subscriptionPayload() {
   const email = pref.get('email', '');
-  const phone = pref.get('phone', '');
   return {
     name: pref.get('name', ''),
     email,
-    phone,
+    phone: '',
     pace: pref.get('pace', 'daily'),
-    channel: email ? 'email' : 'phone'
+    channel: 'email'
   };
 }
 
 async function syncSubscription() {
   const payload = subscriptionPayload();
-  if (!payload.email && !payload.phone) return null;
+  if (!payload.email) return null;
   const saved = await apiPost('subscribe', payload);
   if (saved?.unsubscribe_token) pref.set('unsubscribeToken', saved.unsubscribe_token);
+  pref.set('subscriptionStatus', 'active');
   return saved;
+}
+
+function reminderLabel() {
+  const email = pref.get('email', '');
+  if (email) return email;
+  return '';
+}
+
+function renderReminderStatus() {
+  const el = document.getElementById('reminderStatus');
+  if (!el) return;
+  const contact = reminderLabel();
+  const status = pref.get('subscriptionStatus', contact ? 'active' : '');
+  if (!contact) {
+    el.innerHTML = 'No email reminder is saved yet.';
+  } else if (status === 'canceled') {
+    el.innerHTML = `Reminders are <strong>canceled</strong> for ${esc(contact)}. Save again to restart them.`;
+  } else {
+    el.innerHTML = `Reminders are <strong>active</strong> for ${esc(contact)}.`;
+  }
 }
 
 function recordPromptView(lens, quote) {
@@ -1717,14 +1791,14 @@ async function obEnableNotifs() {
 async function obFinish() {
   const name  = document.getElementById('obNameInput').value.trim();
   const email = document.getElementById('obEmailInput').value.trim();
-  const phone = document.getElementById('obPhoneInput').value.trim();
   showOnboardingMessage('');
   pref.set('name',     name  || '');
   pref.set('email',    email || '');
-  pref.set('phone',    phone || '');
+  pref.set('phone',    '');
   pref.set('pace',     obPace);
   try {
     await syncSubscription();
+    pref.set('subscriptionStatus', email ? 'active' : '');
   } catch(e) {
     showOnboardingMessage(e.message);
     return;
@@ -1832,7 +1906,14 @@ function updateNotifUI(on) {
   const status = document.getElementById('notifStatus');
   if (!toggle) return;
   toggle.classList.toggle('on', on);
-  if (status) status.textContent = on ? 'On — arrives at your chosen pace' : 'Off';
+  if (!status) return;
+  if (!('Notification' in window)) {
+    status.textContent = 'Browser notifications unavailable here';
+  } else if (Notification.permission === 'denied') {
+    status.textContent = 'Blocked in browser settings';
+  } else {
+    status.textContent = on ? 'On for this device' : 'Off for this device';
+  }
 }
 
 async function toggleNotifSetting() {
@@ -1883,10 +1964,10 @@ function closeSettings() { document.getElementById('settingsPanel').classList.re
 function syncSettingsSheet() {
   document.getElementById('sheetNameInput').value  = pref.get('name', '');
   document.getElementById('sheetEmailInput').value = pref.get('email', '');
-  document.getElementById('sheetPhoneInput').value = pref.get('phone', '');
   const p = pref.get('pace', 'daily');
   document.querySelectorAll('.sheet-pace-btn').forEach(b => b.classList.toggle('on', b.dataset.p === p));
   updateNotifUI(pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted');
+  renderReminderStatus();
   showSettingsMessage('');
 }
 
@@ -1899,12 +1980,13 @@ async function saveSettings() {
   const p = document.querySelector('.sheet-pace-btn.on')?.dataset.p || 'daily';
   pref.set('name',  document.getElementById('sheetNameInput').value.trim());
   pref.set('email', document.getElementById('sheetEmailInput').value.trim());
-  pref.set('phone', document.getElementById('sheetPhoneInput').value.trim());
+  pref.set('phone', '');
   pref.set('pace',  p);
   if (pref.get('notif', false)) scheduleNotif();
   try {
     await syncSubscription();
     showSettingsMessage('Saved to Tember.', 'ok');
+    renderReminderStatus();
     setTimeout(closeSettings, 650);
   } catch(e) {
     showSettingsMessage(e.message, 'err');
@@ -1915,17 +1997,18 @@ async function saveSettings() {
 
 async function cancelNotifications() {
   const email = document.getElementById('sheetEmailInput').value.trim() || pref.get('email', '');
-  const phone = document.getElementById('sheetPhoneInput').value.trim() || pref.get('phone', '');
-  if (!email && !phone && !pref.get('unsubscribeToken', '')) {
-    showSettingsMessage('Add the email or phone number to cancel.', 'err');
+  if (!email && !pref.get('unsubscribeToken', '')) {
+    showSettingsMessage('Add the email address to cancel.', 'err');
     return;
   }
   try {
-    await apiPost('cancel', { email, phone, token: pref.get('unsubscribeToken', '') });
+    await apiPost('cancel', { email, phone: '', token: pref.get('unsubscribeToken', '') });
     pref.set('notif', false);
+    pref.set('subscriptionStatus', 'canceled');
     clearTimeout(notifTimer);
     updateNotifUI(false);
-    showSettingsMessage('Canceled. Email/phone notifications are off.', 'ok');
+    renderReminderStatus();
+    showSettingsMessage('Canceled. Email reminders are off.', 'ok');
   } catch(e) {
     showSettingsMessage(e.message, 'err');
   }
@@ -1939,6 +2022,11 @@ function showView(view) {
   practice.hidden = isAbout;
   if (isAbout) closeSettings();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function scrollToInstall(event) {
+  event.preventDefault();
+  document.getElementById('installTember')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
@@ -2157,7 +2245,7 @@ async function submitFeedback(event) {
         text,
         name: pref.get('name', ''),
         email: pref.get('email', ''),
-        phone: pref.get('phone', ''),
+        phone: '',
         page: 'about'
       }
     });
