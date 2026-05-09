@@ -23,6 +23,10 @@ create table if not exists tember_sparks (
   hour_key text not null,
   thought_index integer not null default 0,
   thought text,
+  prompt_category text,
+  prompt_label text,
+  prompt_bridge text,
+  prompt_text text,
   quote text,
   author text,
   name text not null default 'Anonymous',
@@ -58,6 +62,7 @@ for each row execute function tember_touch_updated_at();
 create index if not exists tember_subscribers_status_idx on tember_subscribers(status);
 create index if not exists tember_subscribers_pace_channel_idx on tember_subscribers(pace, channel);
 create index if not exists tember_sparks_hour_created_idx on tember_sparks(hour_key, created_at desc);
+create index if not exists tember_sparks_prompt_category_idx on tember_sparks(prompt_category);
 create index if not exists tember_sparks_status_idx on tember_sparks(status);
 create index if not exists tember_events_type_created_idx on tember_events(event_type, created_at desc);
 
