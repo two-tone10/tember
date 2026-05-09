@@ -439,6 +439,14 @@ body::before {
   color: #09090f; cursor: pointer; margin-top: 8px;
 }
 .sheet-save:hover { opacity: 0.87; }
+.sheet-cancel-sub {
+  width: 100%; padding: 12px; margin-top: 10px;
+  background: transparent; border: 1px solid var(--border-s);
+  border-radius: 999px;
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  color: var(--text-mid); cursor: pointer;
+}
+.sheet-cancel-sub:hover { border-color: var(--rose-bd); color: var(--rose); }
 .sheet-message {
   min-height: 18px;
   margin-top: 10px;
@@ -500,6 +508,16 @@ hr.rule { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
   padding: 12px 0 0; letter-spacing: 0.04em;
 }
 .greeting span { color: var(--text-mid); }
+.practice-record {
+  display: inline-block;
+  margin-left: 8px;
+  color: var(--text-dim);
+}
+.practice-record::before {
+  content: '·';
+  margin-right: 8px;
+  color: rgba(255,255,255,0.16);
+}
 
 /* Quote hero */
 .quote-hero {
@@ -1038,6 +1056,7 @@ input#nInput:focus { outline: none; }
     </div>
 
     <button class="sheet-save" onclick="saveSettings()">Save</button>
+    <button class="sheet-cancel-sub" onclick="cancelNotifications()">Cancel email/phone notifications</button>
     <div class="sheet-message" id="settingsMessage"></div>
   </div>
 </div>
@@ -1321,6 +1340,10 @@ let openThreads = new Set();
 let notifTimer  = null;
 let deferredInstall = null;
 
+function reflectionCount() {
+  return Math.max(pref.get('reflectionCount', 0), userSparks.length);
+}
+
 async function apiPost(action, payload = {}) {
   const res = await fetch(API_URL, {
     method: 'POST',
@@ -1593,13 +1616,35 @@ async function saveSettings() {
   renderGreeting();
 }
 
+async function cancelNotifications() {
+  const email = document.getElementById('sheetEmailInput').value.trim() || pref.get('email', '');
+  const phone = document.getElementById('sheetPhoneInput').value.trim() || pref.get('phone', '');
+  if (!email && !phone && !pref.get('unsubscribeToken', '')) {
+    showSettingsMessage('Add the email or phone number to cancel.', 'err');
+    return;
+  }
+  try {
+    await apiPost('cancel', { email, phone, token: pref.get('unsubscribeToken', '') });
+    pref.set('notif', false);
+    clearTimeout(notifTimer);
+    updateNotifUI(false);
+    showSettingsMessage('Canceled. Email/phone notifications are off.', 'ok');
+  } catch(e) {
+    showSettingsMessage(e.message, 'err');
+  }
+}
+
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderGreeting() {
   const name = pref.get('name', '');
+  const count = reflectionCount();
+  const record = count
+    ? `<span class="practice-record">${count} reflection${count!==1?'s':''} kept</span>`
+    : '';
   const h = getHour();
   const tod = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   document.getElementById('greeting').innerHTML =
-    name ? `${tod}, <span>${name}</span>.` : '';
+    name ? `${tod}, <span>${name}</span>.${record}` : record;
 }
 
 function renderHero() {
@@ -1713,6 +1758,7 @@ async function submitSpark() {
   const spark = { id:Date.now(), key:hourKey(0), text, name, tag:selectedTag, ts:Date.now(), r:0 };
   userSparks.unshift(spark);
   pref.set('sparks', userSparks);
+  pref.set('reflectionCount', reflectionCount());
   apiPost('spark', {
     hour_key: spark.key,
     thought_index: h % THOUGHTS.length,
@@ -1728,6 +1774,7 @@ async function submitSpark() {
   document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn');
   selectedTag = null;
   toggleForm();
+  renderGreeting();
   renderFeed();
 }
 
