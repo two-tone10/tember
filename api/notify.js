@@ -52,6 +52,15 @@ function thoughtForNow() {
   return THOUGHTS[h % THOUGHTS.length];
 }
 
+function cleanText(value) {
+  return String(value ?? '').trim();
+}
+
+function cleanEmail(value) {
+  const email = cleanText(value).toLowerCase();
+  return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+}
+
 function slotKey(date = new Date()) {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}-${date.getHours()}`;
 }
@@ -73,6 +82,7 @@ async function sendEmail(to, thought) {
   const from = process.env.EMAIL_FROM;
   if (!apiKey || !from) throw new Error('Resend is not configured.');
 
+  const appUrl = process.env.TEMBER_APP_URL || 'https://tember.vercel.app';
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -82,29 +92,18 @@ async function sendEmail(to, thought) {
     body: JSON.stringify({
       from,
       to,
-      subject: 'Your Tember thought',
-      text: `${thought}\n\nOpen Tember to reflect or change your notification settings.`
+      subject: 'Your Tember reflection',
+      text: `${thought}\n\nOpen Tember: ${appUrl}\n\nYou can change or cancel reminders in Settings.`,
+      html: `
+        <div style="font-family: Georgia, serif; color:#2b2621; line-height:1.55; max-width:560px;">
+          <p style="font-size:18px;">${thought}</p>
+          <p><a href="${appUrl}" style="color:#7b4e37;">Open Tember</a></p>
+          <p style="font-size:13px; color:#776d64;">You can change or cancel reminders in Settings.</p>
+        </div>
+      `
     })
   });
   if (!response.ok) throw new Error(`Resend failed with ${response.status}`);
-}
-
-async function sendSms(to, thought) {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_FROM_PHONE;
-  if (!sid || !token || !from) throw new Error('Twilio is not configured.');
-
-  const body = new URLSearchParams({ From: from, To: to, Body: `Tember: ${thought}` });
-  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-    method: 'POST',
-    headers: {
-      authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString('base64')}`,
-      'content-type': 'application/x-www-form-urlencoded'
-    },
-    body
-  });
-  if (!response.ok) throw new Error(`Twilio failed with ${response.status}`);
 }
 
 async function markSubscriber(id, patch) {
@@ -119,12 +118,24 @@ module.exports = async function handler(req, res) {
   try {
     const url = new URL(req.url, 'http://localhost');
     const secret = process.env.NOTIFY_SECRET;
-    if (secret && url.searchParams.get('secret') !== secret && req.headers.authorization !== `Bearer ${secret}`) {
+    const authorized = secret && (
+      url.searchParams.get('secret') === secret ||
+      req.headers.authorization === `Bearer ${secret}`
+    );
+    if (secret && !authorized) {
       return send(res, 401, { ok: false, error: 'Unauthorized.' });
     }
 
+    if (url.searchParams.get('test') === '1') {
+      if (!authorized) return send(res, 401, { ok: false, error: 'Test sends require NOTIFY_SECRET.' });
+      const to = cleanEmail(url.searchParams.get('to'));
+      if (!to) return send(res, 400, { ok: false, error: 'Add a valid test email with ?to=you@example.com.' });
+      await sendEmail(to, thoughtForNow());
+      return send(res, 200, { ok: true, test: true, to });
+    }
+
     const subscribers = await supabase(
-      'tember_subscribers?select=id,email,phone,pace,channel,last_sent_at&status=eq.active&limit=1000'
+      'tember_subscribers?select=id,email,pace,last_sent_at&status=eq.active&channel=eq.email&email=not.is.null&limit=1000'
     );
     const due = subscribers.filter((subscriber) => shouldSend(subscriber));
     const thought = thoughtForNow();
@@ -132,8 +143,7 @@ module.exports = async function handler(req, res) {
 
     for (const subscriber of due) {
       try {
-        if (subscriber.channel === 'phone') await sendSms(subscriber.phone, thought);
-        else await sendEmail(subscriber.email, thought);
+        await sendEmail(subscriber.email, thought);
         await markSubscriber(subscriber.id, { last_sent_at: new Date().toISOString(), last_error: null });
         results.push({ id: subscriber.id, ok: true });
       } catch (error) {

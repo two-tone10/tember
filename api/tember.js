@@ -93,7 +93,7 @@ async function upsertSubscriber(payload) {
     : email ? 'email' : phone ? 'phone' : 'email';
 
   if (!email && !phone) {
-    const err = new Error('Add an email or phone number to sign up.');
+    const err = new Error('Add an email address to sign up.');
     err.statusCode = 400;
     throw err;
   }
@@ -134,11 +134,11 @@ async function cancelSubscriber(payload) {
   const token = cleanText(payload.token);
   const filters = [];
 
-  if (token) filters.push(`unsubscribe_token=eq.${encodeURIComponent(token)}`);
-  else if (email) filters.push(`email=eq.${encodeURIComponent(email)}`);
+  if (email) filters.push(`email=eq.${encodeURIComponent(email)}`);
   else if (phone) filters.push(`phone=eq.${encodeURIComponent(phone)}`);
+  else if (token) filters.push(`unsubscribe_token=eq.${encodeURIComponent(token)}`);
   else {
-    const err = new Error('Add the email or phone number to cancel notifications.');
+    const err = new Error('Add the email address to cancel notifications.');
     err.statusCode = 400;
     throw err;
   }
