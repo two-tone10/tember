@@ -679,6 +679,11 @@ hr.rule { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
   letter-spacing: 0.22em; text-transform: uppercase;
   color: var(--gold); margin-bottom: 9px;
 }
+.prompt-bridge {
+  font-size: 12px; font-weight: 300;
+  line-height: 1.65; color: var(--text-dim);
+  margin-bottom: 12px;
+}
 .thought-body {
   font-size: 1rem; font-weight: 300;
   line-height: 1.72; color: var(--text);
@@ -1182,7 +1187,8 @@ input#nInput:focus { outline: none; }
 
   <!-- Thought card -->
   <div class="thought-card" id="thoughtCard">
-    <div class="thought-eyebrow">Reflect on this</div>
+    <div class="thought-eyebrow" id="promptLens">Reflect on this</div>
+    <p class="prompt-bridge" id="promptBridge"></p>
     <p class="thought-body" id="tBody"></p>
     <div class="thought-foot">
       <div class="thought-timer">
@@ -1198,9 +1204,9 @@ input#nInput:focus { outline: none; }
     <div class="form-context" id="formContext"></div>
     <textarea id="tInput" placeholder="What comes up for you?" maxlength="500"></textarea>
     <div class="tag-row">
-      <span class="tag-label">How did it land?</span>
+      <span class="tag-label">How did this quote land?</span>
       <button class="tag-btn" data-t="resonated" onclick="pickTag('resonated',this)">✦ This landed</button>
-      <button class="tag-btn" data-t="with-it"   onclick="pickTag('with-it',this)">◎ Still with it</button>
+      <button class="tag-btn" data-t="with-it"   onclick="pickTag('with-it',this)">◎ Still contemplating</button>
       <button class="tag-btn" data-t="missed"    onclick="pickTag('missed',this)">· Missed me</button>
     </div>
     <div class="form-row">
@@ -1354,38 +1360,180 @@ const THOUGHTS = [
   "Growth happens right at the edge of discomfort — not beyond it, not short of it.",
 ];
 
-const TAG_LABELS = { resonated:"✦ This landed", "with-it":"◎ Still with it", missed:"· Missed me" };
+const TAG_LABELS = { resonated:"✦ This landed", "with-it":"◎ Still contemplating", missed:"· Missed me" };
 const API_URL = '/api/tember';
 
-// Seeds only populate PAST threads (offset 1+), never the live current-hour feed.
-// Each pool is loosely matched to the type of thought at that offset.
-const SEED_POOLS = [
-  // offset 1
-  [
-    { text:"I keep coming back to this. The answer I want to give and the honest answer are very different.", name:"Jordan M.", tag:"resonated", r:14 },
-    { text:"Three years into a career that looks good on paper. This question found me at exactly the right time.", name:"Anonymous", tag:"resonated", r:28 },
-    { text:"I wrote my answer down, crossed it out, and wrote it again. The second one was truer.", name:"Simone A.", tag:"with-it", r:9 },
-  ],[
-    // offset 2
-    { text:"The version of this I told myself five years ago and what I believe today — still reconciling them.", name:"Priya S.", tag:"with-it", r:19 },
-    { text:"I wrote three sentences and deleted them all. The fourth one was true.", name:"Deshawn R.", tag:"resonated", r:11 },
-    { text:"My grandmother said something almost exactly like this once. I didn't understand it then.", name:"Marcus T.", tag:"resonated", r:33 },
-  ],[
-    // offset 3
-    { text:"The honest answer to this is uncomfortable. I'm sitting with it anyway.", name:"Aaliyah K.", tag:"with-it", r:7 },
-    { text:"Moving across the country alone at 22 taught me more about this than anything I ever read.", name:"Carlos V.", tag:"resonated", r:41 },
-    { text:"Didn't connect with this one today. Maybe tomorrow.", name:"Anonymous", tag:"missed", r:4 },
-  ],[
-    // offset 4
-    { text:"This question has been living in me for months. Seeing it here felt like permission to finally answer.", name:"Tanya W.", tag:"resonated", r:52 },
-    { text:"The thing I keep avoiding is the thing this is pointing directly at.", name:"Anonymous", tag:"with-it", r:23 },
-    { text:"I've been doing the right work for the wrong reasons. That's what came up.", name:"Remi A.", tag:"resonated", r:18 },
-  ],[
-    // offset 5
-    { text:"Short answer: I don't know yet. Long answer: I'm closer than I was yesterday.", name:"Jordan K.", tag:"with-it", r:8 },
-    { text:"I called my dad after reading this. First real conversation we've had in months.", name:"Marcus B.", tag:"resonated", r:67 },
-    { text:"This one stopped me mid-morning. Had to put my phone down and just think.", name:"Anonymous", tag:"resonated", r:14 },
-  ],
+const PROMPT_LENSES = [
+  {
+    id: 'personal',
+    label: 'Personal',
+    bridge: 'Let the quote move from the page into the shape of your day.',
+    prompts: [
+      'What part of your life feels closest to the quote right now?',
+      'How might the quote shape the way you move through today?',
+      'Where does the quote meet the person you are becoming?',
+      'What small habit would change if you trusted the quote more?',
+      'What does the quote seem to notice about you?',
+      'Where in your life are you already practicing the quote quietly?',
+      'What part of you resists the quote, and why?',
+      'What would the quote look like in one ordinary choice today?',
+      'What does the quote invite you to pay attention to?',
+      'If the quote were a mirror, what would it show you?'
+    ]
+  },
+  {
+    id: 'memory',
+    label: 'Memory',
+    bridge: 'Some quotes become clearer when they touch something already lived.',
+    prompts: [
+      'When have you already experienced something like the quote?',
+      'What memory suddenly feels different in light of the quote?',
+      'Who first taught you something close to the quote?',
+      'What past version of yourself would have needed the quote?',
+      'What moment from your life gives the quote weight?',
+      'Where have you seen the truth of the quote arrive late?',
+      'What old choice does the quote help you understand more kindly?',
+      'What place, season, or conversation does the quote bring back?',
+      'When did you know something like the quote before you had words for it?',
+      'What memory would you pair with the quote?'
+    ]
+  },
+  {
+    id: 'future',
+    label: 'Future',
+    bridge: 'A quote can become a small opening toward what is not here yet.',
+    prompts: [
+      'If the quote became part of your life, what might change?',
+      'What future version of yourself would understand the quote best?',
+      'What possibility does the quote make easier to imagine?',
+      'What would you try if you believed the quote more deeply?',
+      'What could the quote help you move toward?',
+      'What would be different one year from now if the quote guided you?',
+      'What path feels a little more visible after reading the quote?',
+      'What would the quote ask you to begin, gently?',
+      'What kind of future would make the quote feel true?',
+      'What promise to yourself lives inside the quote?'
+    ]
+  },
+  {
+    id: 'community',
+    label: 'Community',
+    bridge: 'Some quotes open wider when they turn toward other people.',
+    prompts: [
+      'How might the quote matter to the people around you?',
+      'What kind of community could grow from the quote?',
+      'Where does the quote ask you to look beyond yourself?',
+      'What would change if a group of people practiced the quote together?',
+      'Who might feel less alone if the quote were spoken aloud?',
+      'What shared responsibility does the quote suggest?',
+      'How could the quote shape the way people gather?',
+      'What does the quote reveal about belonging?',
+      'Where could the quote create more trust between people?',
+      'What public good might begin with reflecting on the quote?'
+    ]
+  },
+  {
+    id: 'friendship',
+    label: 'Friendship',
+    bridge: 'A quote often becomes real in the way we show up for one another.',
+    prompts: [
+      'What kind of friend does the quote invite you to become?',
+      'Who already embodies the sentiment of the quote in your life?',
+      'What friendship might understand the quote immediately?',
+      'How could the quote change the way you listen?',
+      'Who would you want to discuss the quote with, slowly?',
+      'What does the quote ask of care between friends?',
+      'Where might a friendship need more of what the quote names?',
+      'What would it mean to offer the quote to someone without advice?',
+      'How does the quote change what loyalty feels like?',
+      'What friend has helped you live closer to the quote?'
+    ]
+  },
+  {
+    id: 'family',
+    label: 'Family',
+    bridge: 'Some quotes echo differently inside the rooms and histories we come from.',
+    prompts: [
+      'What would the quote look like inside a family?',
+      'What family lesson does the quote connect to?',
+      'Who in your family would understand the quote differently than you?',
+      'What inherited story does the quote complicate or soften?',
+      'How might the quote move between generations?',
+      'What family pattern does the quote help you see?',
+      'What would you want a younger person in your family to know about the quote?',
+      'Where does the quote touch tenderness, obligation, or forgiveness?',
+      'What does the quote reveal about the home you came from or hope to make?',
+      'What family conversation could begin here?'
+    ]
+  },
+  {
+    id: 'work',
+    label: 'Work & Contribution',
+    bridge: 'Purpose often becomes visible in what we offer, build, repair, or carry.',
+    prompts: [
+      'How might the quote shape the way you contribute?',
+      'What kind of work becomes meaningful through the lens of the quote?',
+      'Where does the quote meet the labor you actually do?',
+      'What contribution would feel more honest after reading the quote?',
+      'How could the quote change the spirit of your effort?',
+      'What part of your work needs more purpose and less performance?',
+      'Where might the quote help you serve without disappearing?',
+      'What problem does the quote make you want to approach differently?',
+      'How does the quote distinguish usefulness from busyness?',
+      'What would your work feel like if it carried the quote?'
+    ]
+  },
+  {
+    id: 'resilience',
+    label: 'Resilience',
+    bridge: 'Some quotes become truest when life asks more of us than expected.',
+    prompts: [
+      'How could the quote help during difficulty?',
+      'What struggle gives the quote weight?',
+      'Where might the quote offer steadiness without easy answers?',
+      'What does the quote make room for when things are uncertain?',
+      'When has hardship made the quote feel real?',
+      'What part of the quote could you hold onto in a hard season?',
+      'How might the quote change the way you carry disappointment?',
+      'Where does the quote ask for courage, patience, or repair?',
+      'What pain does the quote refuse to waste?',
+      'How could the quote become a quiet source of strength?'
+    ]
+  },
+  {
+    id: 'creativity',
+    label: 'Creativity',
+    bridge: 'Sometimes a quote opens best when it becomes image, sound, gesture, or form.',
+    prompts: [
+      'If the quote became art, what would it look like?',
+      'What would the quote sound like as music?',
+      'What image arrives when you sit with the quote?',
+      'If the quote were a color, what would it be and why?',
+      'What would you make in response to the quote?',
+      'What scene from a film or book carries a feeling similar to the quote?',
+      'How could the quote become a poem without using its exact words?',
+      'What object or symbol could hold the quote?',
+      'What would the quote look like in motion?',
+      'What creative risk does the quote quietly invite?'
+    ]
+  },
+  {
+    id: 'play',
+    label: 'Play & Curiosity',
+    bridge: 'Not every serious quote needs a heavy doorway.',
+    prompts: [
+      'What playful experiment could you try with the quote today?',
+      'How would a child interpret the quote differently?',
+      'What question does the quote make you curious to follow?',
+      'How could you test the quote lightly, without pressure?',
+      'What would happen if you treated the quote as an invitation to notice?',
+      'What surprising place might the quote show up today?',
+      'How could the quote become a conversation starter rather than a conclusion?',
+      'What is the least dramatic way to practice the quote?',
+      'What would you ask the quote if it could answer back?',
+      'Where does the quote feel alive, strange, or unfinished?'
+    ]
+  }
 ];
 
 // ── USER PREFS ────────────────────────────────────────────────────────────────
@@ -1411,6 +1559,18 @@ function thoughtFor(offset = 0) {
   const h = (getHour() - offset + 48) % 24;
   return THOUGHTS[h % THOUGHTS.length];
 }
+function promptSeed(offset = 0) {
+  const d = new Date(Date.now() - offset * 3600000);
+  const start = new Date(d.getFullYear(), 0, 0);
+  const day = Math.floor((d - start) / 86400000);
+  return day * 24 + d.getHours();
+}
+function reflectionPromptFor(offset = 0) {
+  const seed = promptSeed(offset);
+  const lens = PROMPT_LENSES[seed % PROMPT_LENSES.length];
+  const prompt = lens.prompts[Math.floor(seed / PROMPT_LENSES.length) % lens.prompts.length];
+  return { ...lens, prompt };
+}
 function timeAgo(ts) {
   const s = Math.floor((Date.now()-ts)/1000);
   if (s < 60) return 'just now';
@@ -1418,19 +1578,6 @@ function timeAgo(ts) {
   if (s < 86400) return Math.floor(s/3600)+'h ago';
   return Math.floor(s/86400)+'d ago';
 }
-
-// ── SEEDS (past threads only — offset 1 through 5) ───────────────────────────
-const SEEDS = [];
-SEED_POOLS.forEach((pool, idx) => {
-  const offset = idx + 1; // seeds start at 1 hour ago, never in live feed
-  const key = hourKey(offset);
-  pool.forEach((s, i) => SEEDS.push({
-    id: -(offset*10+i+1), key,
-    text: s.text, name: s.name, tag: s.tag,
-    ts: Date.now() - offset*3600000 - (10+i*14)*60000,
-    r: s.r,
-  }));
-});
 
 // ── APP STATE ─────────────────────────────────────────────────────────────────
 let userSparks = pref.get('sparks', []);
@@ -1516,6 +1663,25 @@ async function syncSubscription() {
   const saved = await apiPost('subscribe', payload);
   if (saved?.unsubscribe_token) pref.set('unsubscribeToken', saved.unsubscribe_token);
   return saved;
+}
+
+function recordPromptView(lens, quote) {
+  if (location.protocol === 'file:') return;
+  const key = `${hourKey(0)}:${lens.id}:${lens.prompt}`;
+  if (pref.get('lastPromptView', '') === key) return;
+  pref.set('lastPromptView', key);
+  apiPost('event', {
+    event_type: 'prompt_view',
+    payload: {
+      category: lens.id,
+      label: lens.label,
+      prompt: lens.prompt,
+      bridge: lens.bridge,
+      hour_key: hourKey(0),
+      quote: quote.t,
+      author: quote.a
+    }
+  }).catch(() => {});
 }
 
 // ── ONBOARDING ────────────────────────────────────────────────────────────────
@@ -1791,13 +1957,16 @@ function renderGreeting() {
 function renderHero() {
   const h = getHour();
   const q = QUOTES[h % QUOTES.length];
-  const t = THOUGHTS[h % THOUGHTS.length];
+  const lens = reflectionPromptFor(0);
   document.getElementById('qBody').textContent = '“' + q.t + '”';
   document.getElementById('qAttr').textContent = '— ' + q.a;
-  document.getElementById('tBody').textContent = t;
+  document.getElementById('promptLens').textContent = lens.label;
+  document.getElementById('promptBridge').textContent = lens.bridge;
+  document.getElementById('tBody').textContent = lens.prompt;
   document.getElementById('hPill').textContent = hourRange();
   const m = minsLeft();
   document.getElementById('tTimer').textContent = `Refreshes in ${m} minute${m!==1?'s':''}`;
+  recordPromptView(lens, q);
 }
 
 function renderFeed() {
@@ -1829,14 +1998,14 @@ function renderFeed() {
 
 function renderThreads() {
   const localIds = new Set(userSparks.map(s => String(s.remoteId || s.id)));
-  const all  = [...serverSparks.filter(s => !localIds.has(String(s.id))), ...userSparks, ...SEEDS];
+  const all  = [...serverSparks.filter(s => !localIds.has(String(s.id))), ...userSparks];
   const list = document.getElementById('threadsList');
   const rows = [];
   for (let offset = 1; offset <= 5; offset++) {
     const key    = hourKey(offset);
     const sparks = all.filter(s => s.key === key);
     if (!sparks.length) continue;
-    const thought = thoughtFor(offset);
+    const thought = reflectionPromptFor(offset).prompt;
     const isOpen  = openThreads.has(offset);
     const miniCards = sparks.map(s => {
       const sid = String(s.id);
@@ -1884,8 +2053,8 @@ function toggleForm() {
   const open = fw.classList.toggle('open');
   tc.classList.toggle('form-open', open);
   if (open) {
-    const t = THOUGHTS[getHour() % THOUGHTS.length];
-    document.getElementById('formContext').innerHTML = `<strong>Your response to:</strong> "${t}"`;
+    const lens = reflectionPromptFor(0);
+    document.getElementById('formContext').innerHTML = `<strong>Your response through ${lens.label.toLowerCase()}:</strong> "${lens.prompt}"`;
     setTimeout(() => document.getElementById('tInput').focus(), 60);
     fw.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
@@ -1902,7 +2071,8 @@ async function submitSpark() {
   const name = document.getElementById('nInput').value.trim() || pref.get('name','') || 'Anonymous';
   const h = getHour();
   const q = QUOTES[h % QUOTES.length];
-  const thought = THOUGHTS[h % THOUGHTS.length];
+  const lens = reflectionPromptFor(0);
+  const thought = lens.prompt;
   const spark = { id:Date.now(), key:hourKey(0), text, name, tag:selectedTag, ts:Date.now(), r:0 };
   userSparks.unshift(spark);
   pref.set('sparks', userSparks);
@@ -1911,6 +2081,10 @@ async function submitSpark() {
     hour_key: spark.key,
     thought_index: h % THOUGHTS.length,
     thought,
+    prompt_category: lens.id,
+    prompt_label: lens.label,
+    prompt_bridge: lens.bridge,
+    prompt_text: lens.prompt,
     quote: q.t,
     author: q.a,
     name,
@@ -1920,6 +2094,18 @@ async function submitSpark() {
     if (saved?.id) {
       spark.remoteId = saved.id;
       pref.set('sparks', userSparks);
+    }
+  }).catch(() => {});
+  apiPost('event', {
+    event_type: 'reflection_prompt',
+    payload: {
+      category: lens.id,
+      label: lens.label,
+      prompt: lens.prompt,
+      bridge: lens.bridge,
+      hour_key: spark.key,
+      quote: q.t,
+      author: q.a
     }
   }).catch(() => {});
   document.getElementById('tInput').value = '';
@@ -1937,7 +2123,7 @@ function onResonate(id) {
   if (resonated.has(id)) return;
   resonated.add(id);
   pref.set('resonated', [...resonated]);
-  [...SEEDS, ...userSparks, ...serverSparks].forEach(s => { if(String(s.id)===id) s.r++; });
+  [...userSparks, ...serverSparks].forEach(s => { if(String(s.id)===id) s.r++; });
   renderFeed(); renderThreads();
 }
 
