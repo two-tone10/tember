@@ -1,0 +1,12 @@
+{
+  "name": "tember",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "check": "node --check api/tember.js && node --check api/notify.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
