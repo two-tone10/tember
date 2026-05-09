@@ -1339,9 +1339,16 @@ let selectedTag = null;
 let openThreads = new Set();
 let notifTimer  = null;
 let deferredInstall = null;
+let serverSparks = [];
 
 function reflectionCount() {
   return Math.max(pref.get('reflectionCount', 0), userSparks.length);
+}
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
 }
 
 async function apiPost(action, payload = {}) {
@@ -1353,6 +1360,30 @@ async function apiPost(action, payload = {}) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) throw new Error(data.error || 'Tember could not save that yet.');
   return data.data;
+}
+
+function mapRemoteSpark(row) {
+  return {
+    id: row.id,
+    key: row.hour_key,
+    text: row.text,
+    name: row.name || 'Anonymous',
+    tag: row.tag || null,
+    ts: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+    r: row.resonance_count || 0
+  };
+}
+
+async function loadBackend() {
+  if (location.protocol === 'file:') return;
+  try {
+    const res = await fetch(API_URL, { cache: 'no-store' });
+    const body = await res.json();
+    if (res.ok && body.ok && body.data?.sparks) {
+      serverSparks = body.data.sparks.map(mapRemoteSpark);
+      renderAll();
+    }
+  } catch(e) {}
 }
 
 function showOnboardingMessage(text) {
@@ -1662,7 +1693,11 @@ function renderHero() {
 function renderFeed() {
   // Live feed = only real user sparks for this exact hour
   const key = hourKey(0);
-  const all = userSparks.filter(s => s.key === key);
+  const localIds = new Set(userSparks.map(s => String(s.remoteId || s.id)));
+  const all = [
+    ...serverSparks.filter(s => !localIds.has(String(s.id))),
+    ...userSparks
+  ].filter(s => s.key === key);
   const el  = document.getElementById('feed');
   const cnt = document.getElementById('feedCount');
   cnt.textContent = all.length ? `${all.length} reflection${all.length!==1?'s':''} this hour` : '';
@@ -1671,18 +1706,20 @@ function renderFeed() {
     return;
   }
   el.innerHTML = all.map(s => {
-    const lit   = resonated.has(s.id);
+    const sid = String(s.id);
+    const lit   = resonated.has(sid);
     const badge = s.tag ? `<span class="badge badge-${s.tag}">${TAG_LABELS[s.tag]}</span>` : '';
     return `<div class="spark-card">
-      <div class="card-top">${badge}<span class="card-name">${s.name}</span><span class="card-time">${timeAgo(s.ts)}</span></div>
-      <p class="card-text">${s.text}</p>
-      <div class="card-foot"><button class="resonate-btn${lit?' lit':''}" onclick="onResonate(${s.id})">✦&nbsp;${s.r}</button></div>
+      <div class="card-top">${badge}<span class="card-name">${esc(s.name)}</span><span class="card-time">${timeAgo(s.ts)}</span></div>
+      <p class="card-text">${esc(s.text)}</p>
+      <div class="card-foot"><button class="resonate-btn${lit?' lit':''}" onclick="onResonate('${esc(sid)}')">✦&nbsp;${s.r}</button></div>
     </div>`;
   }).join('');
 }
 
 function renderThreads() {
-  const all  = [...userSparks, ...SEEDS];
+  const localIds = new Set(userSparks.map(s => String(s.remoteId || s.id)));
+  const all  = [...serverSparks.filter(s => !localIds.has(String(s.id))), ...userSparks, ...SEEDS];
   const list = document.getElementById('threadsList');
   const rows = [];
   for (let offset = 1; offset <= 5; offset++) {
@@ -1692,12 +1729,13 @@ function renderThreads() {
     const thought = thoughtFor(offset);
     const isOpen  = openThreads.has(offset);
     const miniCards = sparks.map(s => {
-      const lit   = resonated.has(s.id);
+      const sid = String(s.id);
+      const lit   = resonated.has(sid);
       const badge = s.tag ? `<span class="badge badge-${s.tag}" style="font-size:9px;padding:2px 7px">${TAG_LABELS[s.tag]}</span>` : '';
       return `<div class="mini-card">
-        <div class="mini-top">${badge}<span class="mini-name">${s.name}</span><span class="mini-time">${timeAgo(s.ts)}</span></div>
-        <p class="mini-text">${s.text}</p>
-        <div class="mini-foot"><button class="mini-resonate${lit?' lit':''}" onclick="onResonate(${s.id})">✦&nbsp;${s.r}</button></div>
+        <div class="mini-top">${badge}<span class="mini-name">${esc(s.name)}</span><span class="mini-time">${timeAgo(s.ts)}</span></div>
+        <p class="mini-text">${esc(s.text)}</p>
+        <div class="mini-foot"><button class="mini-resonate${lit?' lit':''}" onclick="onResonate('${esc(sid)}')">✦&nbsp;${s.r}</button></div>
       </div>`;
     }).join('');
     rows.push(`<div class="thread-item${isOpen?' open':''}" id="th${offset}">
@@ -1768,6 +1806,11 @@ async function submitSpark() {
     name,
     tag: selectedTag || '',
     text
+  }).then(saved => {
+    if (saved?.id) {
+      spark.remoteId = saved.id;
+      pref.set('sparks', userSparks);
+    }
   }).catch(() => {});
   document.getElementById('tInput').value = '';
   document.getElementById('nInput').value = '';
@@ -1780,10 +1823,11 @@ async function submitSpark() {
 
 // ── RESONATE ──────────────────────────────────────────────────────────────────
 function onResonate(id) {
+  id = String(id);
   if (resonated.has(id)) return;
   resonated.add(id);
   pref.set('resonated', [...resonated]);
-  [...SEEDS, ...userSparks].forEach(s => { if(s.id===id) s.r++; });
+  [...SEEDS, ...userSparks, ...serverSparks].forEach(s => { if(String(s.id)===id) s.r++; });
   renderFeed(); renderThreads();
 }
 
@@ -1945,6 +1989,7 @@ if (pref.get('onboarded', false)) {
   if (pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted') scheduleNotif();
   showInstallBannerIfReady();
 }
+loadBackend();
 
 // Countdown
 setInterval(() => {
