@@ -179,6 +179,14 @@ body::before {
 .ob-input::placeholder { color: var(--text-dim); }
 .ob-input:focus { outline: none; border-color: rgba(232,201,122,0.4); }
 .ob-hint { font-size: 12px; color: var(--text-dim); margin-bottom: 32px; }
+.ob-input + .ob-input { margin-top: 10px; }
+.ob-message {
+  min-height: 18px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--rose);
+  line-height: 1.45;
+}
 
 /* Screen 4 — Notifications */
 .notif-icon {
@@ -431,6 +439,15 @@ body::before {
   color: #09090f; cursor: pointer; margin-top: 8px;
 }
 .sheet-save:hover { opacity: 0.87; }
+.sheet-message {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+}
+.sheet-message.ok { color: var(--gold); }
+.sheet-message.err { color: var(--rose); }
 
 /* ─────────────────────────────────────────────────────────
    MAIN APP
@@ -945,14 +962,17 @@ input#nInput:focus { outline: none; }
 
   <!-- Screen 5: Email -->
   <div class="ob-screen" id="ob5">
-    <div class="ob-q" style="margin-bottom:14px;">Want Tember<br>in your inbox too?</div>
-    <p class="ob-sub" style="margin-bottom:24px;">Get your daily thought delivered by email. No noise — just the practice.</p>
+    <div class="ob-q" style="margin-bottom:14px;">Where should<br>Tember find you?</div>
+    <p class="ob-sub" style="margin-bottom:24px;">Get your thought by email or phone. No noise — just the practice.</p>
     <div class="ob-input-wrap">
       <input id="obEmailInput" class="ob-input" type="email" placeholder="your@email.com"
+        onkeydown="if(event.key==='Enter') obFinish()">
+      <input id="obPhoneInput" class="ob-input" type="tel" placeholder="phone number"
         onkeydown="if(event.key==='Enter') obFinish()">
     </div>
     <button class="ob-btn" onclick="obFinish()" style="margin-top:16px;">Start my practice →</button>
     <button class="ob-email-skip" onclick="obFinish()">Skip for now</button>
+    <div class="ob-message" id="obMessage"></div>
   </div>
 
   <!-- Step dots -->
@@ -1002,8 +1022,9 @@ input#nInput:focus { outline: none; }
     </div>
 
     <div class="sheet-section">
-      <div class="sheet-label">Email</div>
+      <div class="sheet-label">Email or phone</div>
       <input class="sheet-input" id="sheetEmailInput" type="email" placeholder="your@email.com">
+      <input class="sheet-input" id="sheetPhoneInput" type="tel" placeholder="phone number">
     </div>
 
     <div class="sheet-section">
@@ -1017,6 +1038,7 @@ input#nInput:focus { outline: none; }
     </div>
 
     <button class="sheet-save" onclick="saveSettings()">Save</button>
+    <div class="sheet-message" id="settingsMessage"></div>
   </div>
 </div>
 
@@ -1214,6 +1236,7 @@ const THOUGHTS = [
 ];
 
 const TAG_LABELS = { resonated:"✦ This landed", "with-it":"◎ Still with it", missed:"· Missed me" };
+const API_URL = '/api/tember';
 
 // Seeds only populate PAST threads (offset 1+), never the live current-hour feed.
 // Each pool is loosely matched to the type of thought at that offset.
@@ -1298,6 +1321,49 @@ let openThreads = new Set();
 let notifTimer  = null;
 let deferredInstall = null;
 
+async function apiPost(action, payload = {}) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ action, payload })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) throw new Error(data.error || 'Tember could not save that yet.');
+  return data.data;
+}
+
+function showOnboardingMessage(text) {
+  const el = document.getElementById('obMessage');
+  if (el) el.textContent = text;
+}
+
+function showSettingsMessage(text, kind = '') {
+  const el = document.getElementById('settingsMessage');
+  if (!el) return;
+  el.textContent = text;
+  el.className = `sheet-message ${kind}`.trim();
+}
+
+function subscriptionPayload() {
+  const email = pref.get('email', '');
+  const phone = pref.get('phone', '');
+  return {
+    name: pref.get('name', ''),
+    email,
+    phone,
+    pace: pref.get('pace', 'daily'),
+    channel: email ? 'email' : 'phone'
+  };
+}
+
+async function syncSubscription() {
+  const payload = subscriptionPayload();
+  if (!payload.email && !payload.phone) return null;
+  const saved = await apiPost('subscribe', payload);
+  if (saved?.unsubscribe_token) pref.set('unsubscribeToken', saved.unsubscribe_token);
+  return saved;
+}
+
 // ── ONBOARDING ────────────────────────────────────────────────────────────────
 let currentOb = 1;
 let obPace = pref.get('pace', 'daily');
@@ -1328,12 +1394,21 @@ async function obEnableNotifs() {
   obNext(5);
 }
 
-function obFinish() {
+async function obFinish() {
   const name  = document.getElementById('obNameInput').value.trim();
   const email = document.getElementById('obEmailInput').value.trim();
+  const phone = document.getElementById('obPhoneInput').value.trim();
+  showOnboardingMessage('');
   pref.set('name',     name  || '');
   pref.set('email',    email || '');
+  pref.set('phone',    phone || '');
   pref.set('pace',     obPace);
+  try {
+    await syncSubscription();
+  } catch(e) {
+    showOnboardingMessage(e.message);
+    return;
+  }
   pref.set('onboarded', true);
   launchApp();
 }
@@ -1355,7 +1430,7 @@ let joinBannerPace = 'daily';
 
 function showJoinBannerIfNeeded() {
   // Show if notifications are not set up yet
-  const notifOn = pref.get('notif', false) && Notification.permission === 'granted';
+  const notifOn = pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted';
   if (notifOn || pref.get('joinDismissed', false)) return;
   setTimeout(() => document.getElementById('joinBanner').classList.add('show'), 5000);
 }
@@ -1408,7 +1483,7 @@ async function startFromBanner() {
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
 function scheduleNotif() {
-  if (Notification.permission !== 'granted') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   clearTimeout(notifTimer);
   const pace = pref.get('pace', 'daily');
   let delayMs;
@@ -1488,9 +1563,11 @@ function closeSettings() { document.getElementById('settingsPanel').classList.re
 function syncSettingsSheet() {
   document.getElementById('sheetNameInput').value  = pref.get('name', '');
   document.getElementById('sheetEmailInput').value = pref.get('email', '');
+  document.getElementById('sheetPhoneInput').value = pref.get('phone', '');
   const p = pref.get('pace', 'daily');
   document.querySelectorAll('.sheet-pace-btn').forEach(b => b.classList.toggle('on', b.dataset.p === p));
-  updateNotifUI(pref.get('notif', false) && Notification.permission === 'granted');
+  updateNotifUI(pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted');
+  showSettingsMessage('');
 }
 
 function setSheetPace(p, btn) {
@@ -1498,13 +1575,21 @@ function setSheetPace(p, btn) {
   btn.classList.add('on');
 }
 
-function saveSettings() {
+async function saveSettings() {
   const p = document.querySelector('.sheet-pace-btn.on')?.dataset.p || 'daily';
   pref.set('name',  document.getElementById('sheetNameInput').value.trim());
   pref.set('email', document.getElementById('sheetEmailInput').value.trim());
+  pref.set('phone', document.getElementById('sheetPhoneInput').value.trim());
   pref.set('pace',  p);
   if (pref.get('notif', false)) scheduleNotif();
-  closeSettings();
+  try {
+    await syncSubscription();
+    showSettingsMessage('Saved to Tember.', 'ok');
+    setTimeout(closeSettings, 650);
+  } catch(e) {
+    showSettingsMessage(e.message, 'err');
+    return;
+  }
   renderGreeting();
 }
 
@@ -1618,13 +1703,26 @@ function pickTag(t, btn) {
   document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn');
   btn.classList.add('on-'+t);
 }
-function submitSpark() {
+async function submitSpark() {
   const text = document.getElementById('tInput').value.trim();
   if (!text) { document.getElementById('tInput').focus(); return; }
   const name = document.getElementById('nInput').value.trim() || pref.get('name','') || 'Anonymous';
+  const h = getHour();
+  const q = QUOTES[h % QUOTES.length];
+  const thought = THOUGHTS[h % THOUGHTS.length];
   const spark = { id:Date.now(), key:hourKey(0), text, name, tag:selectedTag, ts:Date.now(), r:0 };
   userSparks.unshift(spark);
   pref.set('sparks', userSparks);
+  apiPost('spark', {
+    hour_key: spark.key,
+    thought_index: h % THOUGHTS.length,
+    thought,
+    quote: q.t,
+    author: q.a,
+    name,
+    tag: selectedTag || '',
+    text
+  }).catch(() => {});
   document.getElementById('tInput').value = '';
   document.getElementById('nInput').value = '';
   document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn');
@@ -1797,7 +1895,7 @@ if (pref.get('onboarded', false)) {
   document.getElementById('app').classList.add('visible');
   syncSettingsSheet();
   renderAll();
-  if (pref.get('notif', false) && Notification.permission === 'granted') scheduleNotif();
+  if (pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted') scheduleNotif();
   showInstallBannerIfReady();
 }
 
