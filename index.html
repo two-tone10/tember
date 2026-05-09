@@ -485,6 +485,15 @@ body::before {
   color: var(--gold);
 }
 .header-right { display: flex; align-items: center; gap: 12px; }
+.header-link {
+  background: none; border: none;
+  font-family: inherit; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-dim); cursor: pointer;
+  padding: 5px 2px;
+  transition: color 0.15s;
+}
+.header-link:hover { color: var(--gold); }
 .header-pill {
   font-size: 11px; color: var(--text-dim);
   background: var(--bg-card);
@@ -518,6 +527,72 @@ hr.rule { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
   margin-right: 8px;
   color: rgba(255,255,255,0.16);
 }
+
+.view { display: block; }
+.view[hidden] { display: none; }
+.about-view {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 62px 0 52px;
+}
+.about-kicker {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 18px;
+}
+.about-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic; font-size: clamp(1.75rem, 5vw, 2.65rem);
+  line-height: 1.24; color: var(--text);
+  margin-bottom: 26px;
+}
+.about-copy {
+  font-size: 15px; font-weight: 300;
+  line-height: 1.85; color: var(--text-mid);
+  max-width: 560px;
+}
+.about-copy p + p { margin-top: 18px; }
+.about-copy a { color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--gold-bd); }
+.about-feedback {
+  margin-top: 38px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+.about-feedback-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 12px;
+}
+.about-feedback textarea {
+  width: 100%; min-height: 112px; resize: vertical;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 15px;
+  font-family: inherit; font-size: 14px; font-weight: 300;
+  line-height: 1.7; color: var(--text);
+}
+.about-feedback textarea:focus { outline: none; border-color: var(--border-s); }
+.about-feedback textarea::placeholder { color: var(--text-dim); }
+.about-feedback-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 12px; flex-wrap: wrap;
+}
+.about-feedback button {
+  padding: 10px 18px; background: transparent;
+  border: 1px solid var(--gold-bd); border-radius: 999px;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  color: var(--gold); cursor: pointer;
+}
+.about-feedback-status {
+  font-size: 12px; color: var(--text-dim);
+}
+.about-back {
+  margin-top: 36px;
+  background: none; border: none;
+  font-family: inherit; font-size: 12px;
+  color: var(--text-dim); cursor: pointer;
+}
+.about-back:hover { color: var(--text-mid); }
 
 /* Quote hero */
 .quote-hero {
@@ -1073,11 +1148,13 @@ input#nInput:focus { outline: none; }
       <span class="app-wordmark-text">Tember</span>
     </div>
     <div class="header-right">
+      <button class="header-link" onclick="showView('about')">About</button>
       <div class="header-pill" id="hPill">—</div>
       <button class="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
     </div>
   </header>
 
+  <main id="practiceView" class="view">
   <div class="greeting" id="greeting"></div>
 
   <hr class="rule">
@@ -1155,6 +1232,29 @@ input#nInput:focus { outline: none; }
       Every response lives in its thread — then becomes history.
     </div>
   </footer>
+  </main>
+
+  <main id="aboutView" class="view about-view" hidden>
+    <div class="about-kicker">About Tember</div>
+    <h1 class="about-title">Past thought, present reflection, possible purpose.</h1>
+    <div class="about-copy">
+      <p>Tember is about reveling in the creative tension between past and purpose.</p>
+      <p>Quotes invite reflection on thoughts and ideas of the past that may find relevance in the present moment. By engaging with past thoughts, one can express a current perspective, which can, at times, chart a path forward.</p>
+      <p>In this way, Tember may be a purposeful practice. Lightweight, personal or social, depending on how one chooses to use it. I hope it brings you joy.</p>
+      <p>Tember is a creation of <a href="https://www.anthonyburrow.com" target="_blank" rel="noopener">Anthony Burrow</a>, who studies purpose and appreciates creating ways for people to sense more of it in their lives.</p>
+    </div>
+
+    <form class="about-feedback" onsubmit="submitFeedback(event)">
+      <div class="about-feedback-title">Feedback is welcome</div>
+      <textarea id="feedbackInput" maxlength="800" placeholder="A brief note, question, or thought..."></textarea>
+      <div class="about-feedback-row">
+        <button type="submit">Send feedback</button>
+        <span class="about-feedback-status" id="feedbackStatus"></span>
+      </div>
+    </form>
+
+    <button class="about-back" onclick="showView('practice')">Return to today’s thought</button>
+  </main>
 
 </div><!-- /wrap -->
 </div><!-- /app -->
@@ -1665,6 +1765,16 @@ async function cancelNotifications() {
   }
 }
 
+function showView(view) {
+  const about = document.getElementById('aboutView');
+  const practice = document.getElementById('practiceView');
+  const isAbout = view === 'about';
+  about.hidden = !isAbout;
+  practice.hidden = isAbout;
+  if (isAbout) closeSettings();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function renderGreeting() {
   const name = pref.get('name', '');
@@ -1838,6 +1948,38 @@ function shareQuote() {
 }
 function closeShare() {
   document.getElementById('shareModal').classList.remove('open');
+}
+
+async function submitFeedback(event) {
+  event.preventDefault();
+  const input = document.getElementById('feedbackInput');
+  const status = document.getElementById('feedbackStatus');
+  const text = input.value.trim();
+  if (!text) {
+    input.focus();
+    return;
+  }
+  if (location.protocol === 'file:') {
+    status.textContent = 'Feedback sends from the live site.';
+    return;
+  }
+  status.textContent = 'Sending...';
+  try {
+    await apiPost('event', {
+      event_type: 'feedback',
+      payload: {
+        text,
+        name: pref.get('name', ''),
+        email: pref.get('email', ''),
+        phone: pref.get('phone', ''),
+        page: 'about'
+      }
+    });
+    input.value = '';
+    status.textContent = 'Thank you. Received quietly.';
+  } catch(e) {
+    status.textContent = 'Could not send yet.';
+  }
 }
 
 function wrapCanvasText(ctx, text, maxW) {
