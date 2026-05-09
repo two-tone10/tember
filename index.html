@@ -8,8 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tember">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon.svg">
 <title>Tember</title>
+<!-- Stable frontend rebuild: Supabase hooks are kept server-side until API deployment is verified. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -178,7 +179,6 @@ body::before {
 .ob-input::placeholder { color: var(--text-dim); }
 .ob-input:focus { outline: none; border-color: rgba(232,201,122,0.4); }
 .ob-hint { font-size: 12px; color: var(--text-dim); margin-bottom: 32px; }
-.ob-input + .ob-input { margin-top: 10px; }
 
 /* Screen 4 — Notifications */
 .notif-icon {
@@ -320,15 +320,6 @@ body::before {
 }
 .sheet-pace-btn:hover { color: var(--text-mid); }
 .sheet-pace-btn.on { background: var(--gold-bg); border-color: var(--gold-bd); color: var(--gold); }
-.sheet-message {
-  min-height: 18px;
-  margin-top: 10px;
-  font-size: 11px;
-  color: var(--text-dim);
-  text-align: center;
-}
-.sheet-message.ok { color: var(--gold); }
-.sheet-message.err { color: var(--rose); }
 
 /* ── SHARE BUTTON ── */
 .share-quote-btn {
@@ -440,14 +431,6 @@ body::before {
   color: #09090f; cursor: pointer; margin-top: 8px;
 }
 .sheet-save:hover { opacity: 0.87; }
-.sheet-cancel-sub {
-  width: 100%; padding: 12px; margin-top: 10px;
-  background: transparent; border: 1px solid var(--border-s);
-  border-radius: 999px;
-  font-family: inherit; font-size: 13px; font-weight: 500;
-  color: var(--text-mid); cursor: pointer;
-}
-.sheet-cancel-sub:hover { border-color: var(--rose-bd); color: var(--rose); }
 
 /* ─────────────────────────────────────────────────────────
    MAIN APP
@@ -960,14 +943,12 @@ input#nInput:focus { outline: none; }
     <p class="ob-notif-note">Full background push requires hosting. Works now as an installed PWA on Android. iOS support active on 16.4+.</p>
   </div>
 
-  <!-- Screen 5: Contact -->
+  <!-- Screen 5: Email -->
   <div class="ob-screen" id="ob5">
-    <div class="ob-q" style="margin-bottom:14px;">Where should<br>Tember find you?</div>
-    <p class="ob-sub" style="margin-bottom:24px;">Get your thought by email or phone. No noise — just the practice.</p>
+    <div class="ob-q" style="margin-bottom:14px;">Want Tember<br>in your inbox too?</div>
+    <p class="ob-sub" style="margin-bottom:24px;">Get your daily thought delivered by email. No noise — just the practice.</p>
     <div class="ob-input-wrap">
       <input id="obEmailInput" class="ob-input" type="email" placeholder="your@email.com"
-        onkeydown="if(event.key==='Enter') obFinish()">
-      <input id="obPhoneInput" class="ob-input" type="tel" placeholder="phone number"
         onkeydown="if(event.key==='Enter') obFinish()">
     </div>
     <button class="ob-btn" onclick="obFinish()" style="margin-top:16px;">Start my practice →</button>
@@ -1021,13 +1002,8 @@ input#nInput:focus { outline: none; }
     </div>
 
     <div class="sheet-section">
-      <div class="sheet-label">Delivery</div>
-      <div class="sheet-pace-options" style="margin-bottom:10px;">
-        <button class="sheet-pace-btn on" data-channel="email" onclick="setSheetChannel('email',this)">Email</button>
-        <button class="sheet-pace-btn" data-channel="phone" onclick="setSheetChannel('phone',this)">Phone</button>
-      </div>
+      <div class="sheet-label">Email</div>
       <input class="sheet-input" id="sheetEmailInput" type="email" placeholder="your@email.com">
-      <input class="sheet-input" id="sheetPhoneInput" type="tel" placeholder="phone number">
     </div>
 
     <div class="sheet-section">
@@ -1041,8 +1017,6 @@ input#nInput:focus { outline: none; }
     </div>
 
     <button class="sheet-save" onclick="saveSettings()">Save</button>
-    <button class="sheet-cancel-sub" onclick="cancelNotifications()">Cancel email/phone notifications</button>
-    <div class="sheet-message" id="settingsMessage"></div>
   </div>
 </div>
 
@@ -1240,7 +1214,6 @@ const THOUGHTS = [
 ];
 
 const TAG_LABELS = { resonated:"✦ This landed", "with-it":"◎ Still with it", missed:"· Missed me" };
-const API_URL = '/api/tember';
 
 // Seeds only populate PAST threads (offset 1+), never the live current-hour feed.
 // Each pool is loosely matched to the type of thought at that offset.
@@ -1319,78 +1292,11 @@ SEED_POOLS.forEach((pool, idx) => {
 
 // ── APP STATE ─────────────────────────────────────────────────────────────────
 let userSparks = pref.get('sparks', []);
-let serverSparks = [];
-let resonated  = new Set(pref.get('resonated', []).map(String));
+let resonated  = new Set(pref.get('resonated', []));
 let selectedTag = null;
 let openThreads = new Set();
 let notifTimer  = null;
 let deferredInstall = null;
-
-function esc(value) {
-  return String(value ?? '').replace(/[&<>"']/g, ch => ({
-    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
-  }[ch]));
-}
-
-async function apiPost(action, payload = {}) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ action, payload })
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.ok === false) throw new Error(data.error || 'Tember could not save that yet.');
-  return data.data;
-}
-
-function mapRemoteSpark(row) {
-  return {
-    id: row.id,
-    remote: true,
-    key: row.hour_key,
-    text: row.text,
-    name: row.name || 'Anonymous',
-    tag: row.tag || null,
-    ts: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-    r: row.resonance_count || 0
-  };
-}
-
-async function loadBackend() {
-  try {
-    const res = await fetch(API_URL, { cache: 'no-store' });
-    const body = await res.json();
-    if (res.ok && body.ok && body.data?.sparks) {
-      serverSparks = body.data.sparks.map(mapRemoteSpark);
-      renderAll();
-    }
-  } catch(e) {}
-}
-
-function subscriptionPayload() {
-  return {
-    name: pref.get('name', ''),
-    email: pref.get('email', ''),
-    phone: pref.get('phone', ''),
-    pace: pref.get('pace', 'daily'),
-    channel: pref.get('channel', pref.get('email', '') ? 'email' : 'phone')
-  };
-}
-
-async function syncSubscription() {
-  const payload = subscriptionPayload();
-  if (!payload.email && !payload.phone) return null;
-  const saved = await apiPost('subscribe', payload);
-  if (saved?.unsubscribe_token) pref.set('unsubscribeToken', saved.unsubscribe_token);
-  return saved;
-}
-
-function showSettingsMessage(text, kind = '') {
-  const el = document.getElementById('settingsMessage');
-  if (!el) return;
-  el.textContent = text;
-  el.className = `sheet-message ${kind}`.trim();
-}
 
 // ── ONBOARDING ────────────────────────────────────────────────────────────────
 let currentOb = 1;
@@ -1422,16 +1328,12 @@ async function obEnableNotifs() {
   obNext(5);
 }
 
-async function obFinish() {
+function obFinish() {
   const name  = document.getElementById('obNameInput').value.trim();
   const email = document.getElementById('obEmailInput').value.trim();
-  const phone = document.getElementById('obPhoneInput').value.trim();
   pref.set('name',     name  || '');
   pref.set('email',    email || '');
-  pref.set('phone',    phone || '');
-  pref.set('channel',  email ? 'email' : 'phone');
   pref.set('pace',     obPace);
-  try { await syncSubscription(); } catch(e) {}
   pref.set('onboarded', true);
   launchApp();
 }
@@ -1453,7 +1355,7 @@ let joinBannerPace = 'daily';
 
 function showJoinBannerIfNeeded() {
   // Show if notifications are not set up yet
-  const notifOn = pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted';
+  const notifOn = pref.get('notif', false) && Notification.permission === 'granted';
   if (notifOn || pref.get('joinDismissed', false)) return;
   setTimeout(() => document.getElementById('joinBanner').classList.add('show'), 5000);
 }
@@ -1506,7 +1408,7 @@ async function startFromBanner() {
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
 function scheduleNotif() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (Notification.permission !== 'granted') return;
   clearTimeout(notifTimer);
   const pace = pref.get('pace', 'daily');
   let delayMs;
@@ -1586,57 +1488,24 @@ function closeSettings() { document.getElementById('settingsPanel').classList.re
 function syncSettingsSheet() {
   document.getElementById('sheetNameInput').value  = pref.get('name', '');
   document.getElementById('sheetEmailInput').value = pref.get('email', '');
-  document.getElementById('sheetPhoneInput').value = pref.get('phone', '');
   const p = pref.get('pace', 'daily');
   document.querySelectorAll('.sheet-pace-btn').forEach(b => b.classList.toggle('on', b.dataset.p === p));
-  const channel = pref.get('channel', pref.get('email', '') ? 'email' : 'phone');
-  document.querySelectorAll('[data-channel]').forEach(b => b.classList.toggle('on', b.dataset.channel === channel));
-  updateNotifUI(pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted');
-  showSettingsMessage('');
+  updateNotifUI(pref.get('notif', false) && Notification.permission === 'granted');
 }
 
 function setSheetPace(p, btn) {
-  document.querySelectorAll('[data-p]').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.sheet-pace-btn').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
 }
 
-function setSheetChannel(channel, btn) {
-  document.querySelectorAll('[data-channel]').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-}
-
-async function saveSettings() {
-  const p = document.querySelector('[data-p].on')?.dataset.p || 'daily';
-  const channel = document.querySelector('[data-channel].on')?.dataset.channel || 'email';
+function saveSettings() {
+  const p = document.querySelector('.sheet-pace-btn.on')?.dataset.p || 'daily';
   pref.set('name',  document.getElementById('sheetNameInput').value.trim());
   pref.set('email', document.getElementById('sheetEmailInput').value.trim());
-  pref.set('phone', document.getElementById('sheetPhoneInput').value.trim());
-  pref.set('channel', channel);
   pref.set('pace',  p);
   if (pref.get('notif', false)) scheduleNotif();
-  try {
-    await syncSubscription();
-    showSettingsMessage('Saved. Your email/phone notification settings are active.', 'ok');
-    setTimeout(closeSettings, 650);
-  } catch(e) {
-    showSettingsMessage(e.message, 'err');
-    return;
-  }
+  closeSettings();
   renderGreeting();
-}
-
-async function cancelNotifications() {
-  const email = document.getElementById('sheetEmailInput').value.trim() || pref.get('email', '');
-  const phone = document.getElementById('sheetPhoneInput').value.trim() || pref.get('phone', '');
-  try {
-    await apiPost('cancel', { email, phone, token: pref.get('unsubscribeToken', '') });
-    pref.set('notif', false);
-    clearTimeout(notifTimer);
-    updateNotifUI(false);
-    showSettingsMessage('Canceled. Email/phone notifications are off.', 'ok');
-  } catch(e) {
-    showSettingsMessage(e.message, 'err');
-  }
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
@@ -1663,7 +1532,7 @@ function renderHero() {
 function renderFeed() {
   // Live feed = only real user sparks for this exact hour
   const key = hourKey(0);
-  const all = [...serverSparks, ...userSparks].filter(s => s.key === key);
+  const all = userSparks.filter(s => s.key === key);
   const el  = document.getElementById('feed');
   const cnt = document.getElementById('feedCount');
   cnt.textContent = all.length ? `${all.length} reflection${all.length!==1?'s':''} this hour` : '';
@@ -1672,19 +1541,18 @@ function renderFeed() {
     return;
   }
   el.innerHTML = all.map(s => {
-    const sid = String(s.id);
-    const lit   = resonated.has(sid);
+    const lit   = resonated.has(s.id);
     const badge = s.tag ? `<span class="badge badge-${s.tag}">${TAG_LABELS[s.tag]}</span>` : '';
     return `<div class="spark-card">
-      <div class="card-top">${badge}<span class="card-name">${esc(s.name)}</span><span class="card-time">${timeAgo(s.ts)}</span></div>
-      <p class="card-text">${esc(s.text)}</p>
-      <div class="card-foot"><button class="resonate-btn${lit?' lit':''}" onclick="onResonate('${esc(sid)}')">✦&nbsp;${s.r}</button></div>
+      <div class="card-top">${badge}<span class="card-name">${s.name}</span><span class="card-time">${timeAgo(s.ts)}</span></div>
+      <p class="card-text">${s.text}</p>
+      <div class="card-foot"><button class="resonate-btn${lit?' lit':''}" onclick="onResonate(${s.id})">✦&nbsp;${s.r}</button></div>
     </div>`;
   }).join('');
 }
 
 function renderThreads() {
-  const all  = [...serverSparks, ...userSparks, ...SEEDS];
+  const all  = [...userSparks, ...SEEDS];
   const list = document.getElementById('threadsList');
   const rows = [];
   for (let offset = 1; offset <= 5; offset++) {
@@ -1694,13 +1562,12 @@ function renderThreads() {
     const thought = thoughtFor(offset);
     const isOpen  = openThreads.has(offset);
     const miniCards = sparks.map(s => {
-      const sid = String(s.id);
-      const lit   = resonated.has(sid);
+      const lit   = resonated.has(s.id);
       const badge = s.tag ? `<span class="badge badge-${s.tag}" style="font-size:9px;padding:2px 7px">${TAG_LABELS[s.tag]}</span>` : '';
       return `<div class="mini-card">
-        <div class="mini-top">${badge}<span class="mini-name">${esc(s.name)}</span><span class="mini-time">${timeAgo(s.ts)}</span></div>
-        <p class="mini-text">${esc(s.text)}</p>
-        <div class="mini-foot"><button class="mini-resonate${lit?' lit':''}" onclick="onResonate('${esc(sid)}')">✦&nbsp;${s.r}</button></div>
+        <div class="mini-top">${badge}<span class="mini-name">${s.name}</span><span class="mini-time">${timeAgo(s.ts)}</span></div>
+        <p class="mini-text">${s.text}</p>
+        <div class="mini-foot"><button class="mini-resonate${lit?' lit':''}" onclick="onResonate(${s.id})">✦&nbsp;${s.r}</button></div>
       </div>`;
     }).join('');
     rows.push(`<div class="thread-item${isOpen?' open':''}" id="th${offset}">
@@ -1751,33 +1618,13 @@ function pickTag(t, btn) {
   document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn');
   btn.classList.add('on-'+t);
 }
-async function submitSpark() {
+function submitSpark() {
   const text = document.getElementById('tInput').value.trim();
   if (!text) { document.getElementById('tInput').focus(); return; }
   const name = document.getElementById('nInput').value.trim() || pref.get('name','') || 'Anonymous';
-  const h = getHour();
-  const q = QUOTES[h % QUOTES.length];
-  const thought = THOUGHTS[h % THOUGHTS.length];
-  const spark = { id:String(Date.now()), key:hourKey(0), text, name, tag:selectedTag, ts:Date.now(), r:0 };
+  const spark = { id:Date.now(), key:hourKey(0), text, name, tag:selectedTag, ts:Date.now(), r:0 };
   userSparks.unshift(spark);
   pref.set('sparks', userSparks);
-  try {
-    const saved = await apiPost('spark', {
-      hour_key: spark.key,
-      thought_index: h % THOUGHTS.length,
-      thought,
-      quote: q.t,
-      author: q.a,
-      name,
-      tag: selectedTag || '',
-      text
-    });
-    if (saved) {
-      userSparks = userSparks.filter(s => s.id !== spark.id);
-      pref.set('sparks', userSparks);
-      serverSparks.unshift(mapRemoteSpark(saved));
-    }
-  } catch(e) {}
   document.getElementById('tInput').value = '';
   document.getElementById('nInput').value = '';
   document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn');
@@ -1788,20 +1635,10 @@ async function submitSpark() {
 
 // ── RESONATE ──────────────────────────────────────────────────────────────────
 function onResonate(id) {
-  id = String(id);
   if (resonated.has(id)) return;
   resonated.add(id);
   pref.set('resonated', [...resonated]);
-  let count = 1;
-  [...SEEDS, ...userSparks, ...serverSparks].forEach(s => {
-    if(String(s.id) === id) {
-      s.r++;
-      count = s.r;
-    }
-  });
-  if (serverSparks.some(s => String(s.id) === id)) {
-    apiPost('resonate', { id, count }).catch(() => {});
-  }
+  [...SEEDS, ...userSparks].forEach(s => { if(s.id===id) s.r++; });
   renderFeed(); renderThreads();
 }
 
@@ -1960,10 +1797,9 @@ if (pref.get('onboarded', false)) {
   document.getElementById('app').classList.add('visible');
   syncSettingsSheet();
   renderAll();
-  if (pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted') scheduleNotif();
+  if (pref.get('notif', false) && Notification.permission === 'granted') scheduleNotif();
   showInstallBannerIfReady();
 }
-loadBackend();
 
 // Countdown
 setInterval(() => {

@@ -1,4 +1,4 @@
-const CACHE = 'tember-v2';
+const CACHE = 'tember-v3';
 const ASSETS = ['./index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 // Install — cache core assets
@@ -24,6 +24,10 @@ self.addEventListener('activate', e => {
 // Fetch — serve from cache, fall back to network
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  if (e.request.mode === 'navigate') {
+    e.respondWith(fetch(e.request).catch(() => caches.match('./index.html')));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).then(res => {
       const clone = res.clone();
