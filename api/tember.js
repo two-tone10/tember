@@ -7,6 +7,7 @@ const TABLES = {
 const VALID_PACES = new Set(['hourly', '3x', 'daily']);
 const VALID_CHANNELS = new Set(['email', 'phone']);
 const VALID_TAGS = new Set(['resonated', 'with-it', 'missed', '']);
+const ARCHIVE_HOURS = 168;
 
 function send(res, status, payload) {
   res.statusCode = status;
@@ -216,10 +217,10 @@ async function recordEvent(payload) {
 }
 
 async function bootstrap() {
-  const keys = [hourKey(), ...priorHourKeys(5)];
+  const keys = [hourKey(), ...priorHourKeys(ARCHIVE_HOURS)];
   const keyFilter = keys.map((key) => `"${key}"`).join(',');
   const sparks = await supabase(
-    `${TABLES.sparks}?select=*&hour_key=in.(${keyFilter})&status=eq.approved&order=created_at.desc&limit=200`
+    `${TABLES.sparks}?select=*&hour_key=in.(${keyFilter})&status=eq.approved&order=created_at.desc&limit=500`
   );
   return { hour_key: keys[0], prior_hour_keys: keys.slice(1), sparks: sparks || [] };
 }
