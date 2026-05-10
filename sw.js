@@ -1,5 +1,5 @@
-const CACHE = 'tember-v3';
-const ASSETS = ['./index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
+const CACHE = 'tember-v4';
+const ASSETS = ['./index.html', './quotes.js', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 // Install — cache core assets
 self.addEventListener('install', e => {

@@ -1384,33 +1384,118 @@ input#nInput:focus { outline: none; }
   </div>
 </div>
 
+<script src="./quotes.js"></script>
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
-const QUOTES = [
-  { t:"Don't ask what the world needs. Ask what makes you come alive — because what the world needs is people who have come alive.", a:"Howard Thurman" },
-  { t:"The two most important days in your life are the day you are born and the day you find out why.", a:"Mark Twain" },
+const QUOTES = window.TEMBER_QUOTES || [
+  { t:"Don't ask what the world needs. Ask what makes you come alive.", a:"Howard Thurman" },
   { t:"He who has a why to live can bear almost any how.", a:"Friedrich Nietzsche" },
   { t:"Life is never made unbearable by circumstances, but only by lack of meaning and purpose.", a:"Viktor Frankl" },
-  { t:"The purpose of life is not to be happy. It is to be useful, to be honorable, to be compassionate.", a:"Ralph Waldo Emerson" },
-  { t:"Your work is to discover your work and then with all your heart to give yourself to it.", a:"The Buddha" },
-  { t:"We are here to add what we can to life, not to get what we can from it.", a:"William Osler" },
   { t:"Efforts and courage are not enough without purpose and direction.", a:"John F. Kennedy" },
-  { t:"The place you are called to is where your deep gladness and the world's deep hunger meet.", a:"Frederick Buechner" },
-  { t:"To live is to choose. But to choose well, you must know who you are and what you stand for.", a:"Kofi Annan" },
-  { t:"The soul which has no fixed purpose in life is lost; to be everywhere, is to be nowhere.", a:"Michel de Montaigne" },
+  { t:"To live is to choose.", a:"Kofi Annan" },
+  { t:"The soul which has no fixed purpose in life is lost.", a:"Michel de Montaigne" },
   { t:"It is not enough to have lived. We should be determined to live for something.", a:"Winston Churchill" },
   { t:"One life is all we have and we live it as we believe in living it.", a:"Joan of Arc" },
-  { t:"The mystery of human existence lies not in just staying alive, but in finding something to live for.", a:"Fyodor Dostoevsky" },
-  { t:"What lies behind us and what lies before us are tiny matters compared to what lies within us.", a:"Ralph Waldo Emerson" },
-  { t:"We must be willing to let go of the life we planned so as to have the life that is waiting for us.", a:"Joseph Campbell" },
-  { t:"The secret of man's being is not only to live but to have something to live for.", a:"Fyodor Dostoevsky" },
-  { t:"In the middle of every difficulty lies opportunity.", a:"Albert Einstein" },
-  { t:"You must be the change you wish to see in the world.", a:"Mahatma Gandhi" },
+  { t:"The mystery of human existence lies in finding something to live for.", a:"Fyodor Dostoevsky" },
+  { t:"What lies within us matters more than what lies behind or before us.", a:"Ralph Waldo Emerson" },
+  { t:"We are here to add what we can to life.", a:"William Osler" },
+  { t:"The good life is one inspired by love and guided by knowledge.", a:"Bertrand Russell" },
+  { t:"The unexamined life is not worth living.", a:"Socrates" },
+  { t:"Happiness depends upon ourselves.", a:"Aristotle" },
+  { t:"Act as if what you do makes a difference. It does.", a:"William James" },
+  { t:"The privilege of a lifetime is being who you are.", a:"Joseph Campbell" },
+  { t:"In the middle of difficulty lies opportunity.", a:"Albert Einstein" },
+  { t:"The future depends on what you do today.", a:"Mahatma Gandhi" },
   { t:"The most common form of despair is not being who you are.", a:"Søren Kierkegaard" },
-  { t:"Authenticity is a collection of choices we have to make every day.", a:"Brené Brown" },
   { t:"Curiosity is the wick in the candle of learning.", a:"William Arthur Ward" },
-  { t:"Daring greatly means the courage to be vulnerable — to show up and be seen.", a:"Brené Brown" },
   { t:"The world changes one courageous conversation at a time.", a:"Margaret Wheatley" },
+  { t:"Your silence will not protect you.", a:"Audre Lorde" },
+  { t:"Without community, there is no liberation.", a:"Audre Lorde" },
+  { t:"There is no greater agony than bearing an untold story inside you.", a:"Maya Angelou" },
+  { t:"My mission in life is not merely to survive, but to thrive.", a:"Maya Angelou" },
+  { t:"The place in which I'll fit will not exist until I make it.", a:"James Baldwin" },
+  { t:"Not everything that is faced can be changed; but nothing can be changed until it is faced.", a:"James Baldwin" },
+  { t:"Definitions belong to the definers, not the defined.", a:"Toni Morrison" },
+  { t:"Freeing yourself was one thing; claiming ownership of that freed self was another.", a:"Toni Morrison" },
+  { t:"The function of freedom is to free someone else.", a:"Toni Morrison" },
+  { t:"I am deliberate and afraid of nothing.", a:"Audre Lorde" },
+  { t:"When I dare to be powerful, it becomes less and less important whether I am afraid.", a:"Audre Lorde" },
+  { t:"The most common way people give up their power is by thinking they don't have any.", a:"Alice Walker" },
+  { t:"Hard times require furious dancing.", a:"Alice Walker" },
+  { t:"The role of the artist is to make revolution irresistible.", a:"Toni Cade Bambara" },
+  { t:"The master's tools will never dismantle the master's house.", a:"Audre Lorde" },
+  { t:"I am no longer accepting the things I cannot change.", a:"Angela Davis" },
+  { t:"When you learn, teach. When you get, give.", a:"Maya Angelou" },
+  { t:"We are the ones we have been waiting for.", a:"June Jordan" },
+  { t:"There is always something left to love.", a:"Lorraine Hansberry" },
+  { t:"I dwell in possibility.", a:"Emily Dickinson" },
+  { t:"Forever is composed of nows.", a:"Emily Dickinson" },
+  { t:"Tell me, what is it you plan to do with your one wild and precious life?", a:"Mary Oliver" },
+  { t:"Attention is the beginning of devotion.", a:"Mary Oliver" },
+  { t:"Instructions for living a life: Pay attention. Be astonished. Tell about it.", a:"Mary Oliver" },
+  { t:"You do not find the happy life. You make it.", a:"Camilla Eyring Kimball" },
+  { t:"Who looks outside, dreams; who looks inside, awakes.", a:"Carl Jung" },
+  { t:"We delight in the beauty of the butterfly, but rarely admit the changes it has gone through.", a:"Maya Angelou" },
+  { t:"There is no passion to be found playing small.", a:"Nelson Mandela" },
+  { t:"It always seems impossible until it's done.", a:"Nelson Mandela" },
+  { t:"If you are always trying to be normal, you will never know how amazing you can be.", a:"Maya Angelou" },
+  { t:"Service to others is the rent you pay for your room here on earth.", a:"Muhammad Ali" },
+  { t:"I am because we are.", a:"Ubuntu proverb" },
+  { t:"If you want to go far, go together.", a:"African proverb" },
+  { t:"The one who plants trees, knowing they will never sit in their shade, has begun to understand life.", a:"Greek proverb" },
+  { t:"Remember the earth whose skin you are.", a:"Joy Harjo" },
+  { t:"The land is the real teacher.", a:"Robin Wall Kimmerer" },
+  { t:"Knowing yourself is the beginning of all wisdom.", a:"Aristotle" },
+  { t:"We are all related.", a:"Lakota teaching" },
+  { t:"A good mind is a good path.", a:"Haudenosaunee teaching" },
+  { t:"Turn your face toward the sun and the shadows fall behind you.", a:"Māori proverb" },
+  { t:"Caminante, no hay camino; se hace camino al andar.", a:"Antonio Machado" },
+  { t:"To survive the Borderlands you must live sin fronteras.", a:"Gloria Anzaldúa" },
+  { t:"I change myself, I change the world.", a:"Gloria Anzaldúa" },
+  { t:"Preservation of one's own culture does not require contempt for other cultures.", a:"César Chávez" },
+  { t:"We cannot seek achievement for ourselves and forget progress for our community.", a:"César Chávez" },
+  { t:"Sí, se puede.", a:"Dolores Huerta" },
+  { t:"The only path is the one you make.", a:"Isabel Allende" },
+  { t:"Write what should not be forgotten.", a:"Isabel Allende" },
+  { t:"Hope is born of participation.", a:"Paulo Freire" },
+  { t:"To speak a true word is to transform the world.", a:"Paulo Freire" },
+  { t:"We have only what we give.", a:"Isabel Allende" },
+  { t:"I have learned that I am not alone.", a:"Rigoberta Menchú" },
+  { t:"The journey of a thousand miles begins with a single step.", a:"Lao Tzu" },
+  { t:"Knowing others is intelligence; knowing yourself is true wisdom.", a:"Lao Tzu" },
+  { t:"The man who moves a mountain begins by carrying away small stones.", a:"Confucius" },
+  { t:"It does not matter how slowly you go as long as you do not stop.", a:"Confucius" },
+  { t:"Our greatest glory is not in never falling, but in rising every time we fall.", a:"Confucius" },
+  { t:"The wound is the place where the light enters you.", a:"Rumi" },
+  { t:"Let yourself be silently drawn by the strange pull of what you really love.", a:"Rumi" },
+  { t:"I slept and dreamt that life was joy.", a:"Rabindranath Tagore" },
+  { t:"Faith is the bird that feels the light and sings when the dawn is still dark.", a:"Rabindranath Tagore" },
+  { t:"The butterfly counts not months but moments, and has time enough.", a:"Rabindranath Tagore" },
+  { t:"Because you are alive, everything is possible.", a:"Thich Nhat Hanh" },
+  { t:"The present moment is filled with joy and happiness.", a:"Thich Nhat Hanh" },
+  { t:"No mud, no lotus.", a:"Thich Nhat Hanh" },
+  { t:"Fall seven times, stand up eight.", a:"Japanese proverb" },
+  { t:"The obstacle is the path.", a:"Zen proverb" },
+  { t:"A flower does not think of competing with the flower next to it.", a:"Zen teaching" },
+  { t:"Your task is not to seek for love, but to seek the barriers within yourself.", a:"Rumi" },
+  { t:"If you tremble with indignation at every injustice, then you are a comrade of mine.", a:"Che Guevara" },
+  { t:"We realize the importance of our voices only when we are silenced.", a:"Malala Yousafzai" },
+  { t:"One child, one teacher, one book, one pen can change the world.", a:"Malala Yousafzai" },
+  { t:"Another world is not only possible, she is on her way.", a:"Arundhati Roy" },
+  { t:"The more you know of your history, the more liberated you are.", a:"Maya Angelou" },
+  { t:"The purpose of freedom is to create it for others.", a:"Nelson Mandela" },
+  { t:"Until the lions have their own historians, the history of the hunt will glorify the hunter.", a:"African proverb" },
+  { t:"A person is a person through other persons.", a:"Ubuntu teaching" },
+  { t:"When spider webs unite, they can tie up a lion.", a:"Ethiopian proverb" },
+  { t:"The best time to plant a tree was twenty years ago. The second best time is now.", a:"Chinese proverb" },
+  { t:"A single arrow is easily broken; a bundle is not.", a:"Japanese proverb" },
+  { t:"A bird does not sing because it has an answer; it sings because it has a song.", a:"Chinese proverb" },
+  { t:"Tell me and I forget. Teach me and I remember. Involve me and I learn.", a:"Chinese proverb" },
+  { t:"No one saves us but ourselves.", a:"The Buddha" },
+  { t:"Peace comes from within.", a:"The Buddha" },
+  { t:"The mind is everything. What you think you become.", a:"The Buddha" },
+  { t:"Your work is to discover your work and then give yourself to it.", a:"The Buddha" },
+  { t:"Be a lamp unto yourself.", a:"The Buddha" }
 ];
 
 const THOUGHTS = [
@@ -1636,15 +1721,20 @@ function hourRange(offset = 0) {
   const fmt = n => (n%12||12)+':00 '+(n>=12?'PM':'AM');
   return fmt(h) + ' – ' + fmt((h+1)%24);
 }
-function thoughtFor(offset = 0) {
-  const h = (getHour() - offset + 48) % 24;
-  return THOUGHTS[h % THOUGHTS.length];
-}
-function promptSeed(offset = 0) {
+function rotationSeed(offset = 0) {
   const d = new Date(Date.now() - offset * 3600000);
   const start = new Date(d.getFullYear(), 0, 0);
   const day = Math.floor((d - start) / 86400000);
   return day * 24 + d.getHours();
+}
+function quoteIndexFor(offset = 0) {
+  return rotationSeed(offset) % QUOTES.length;
+}
+function quoteFor(offset = 0) {
+  return QUOTES[quoteIndexFor(offset)];
+}
+function promptSeed(offset = 0) {
+  return rotationSeed(offset);
 }
 function reflectionPromptFor(offset = 0) {
   const seed = promptSeed(offset);
@@ -1918,11 +2008,10 @@ function scheduleNotif() {
     return t - Date.now();
   })();
   notifTimer = setTimeout(() => {
-    const h = getHour();
-    const thought = THOUGHTS[h % THOUGHTS.length];
+    const quote = quoteFor(0);
     try {
       new Notification('Tember', {
-        body: thought,
+        body: quote.t,
         icon: 'icon.svg',
         tag:  'tember-prompt',
       });
@@ -2073,8 +2162,7 @@ function renderGreeting() {
 }
 
 function renderHero() {
-  const h = getHour();
-  const q = QUOTES[h % QUOTES.length];
+  const q = quoteFor(0);
   const lens = reflectionPromptFor(0);
   document.getElementById('qBody').textContent = '“' + q.t + '”';
   document.getElementById('qAttr').textContent = '— ' + q.a;
@@ -2124,8 +2212,8 @@ function renderThreads() {
     const sparks = all.filter(s => s.key === key);
     if (!sparks.length) continue;
     const first = sparks.find(s => s.quote) || sparks[0];
-    const quoteText = first?.quote || thoughtFor(offset).t;
-    const authorText = first?.author || thoughtFor(offset).a;
+    const quoteText = first?.quote || quoteFor(offset).t;
+    const authorText = first?.author || quoteFor(offset).a;
     const promptText = first?.prompt || reflectionPromptFor(offset).prompt;
     const isOpen  = openThreads.has(offset);
     const miniCards = sparks.map(s => {
@@ -2194,8 +2282,7 @@ async function submitSpark() {
   const message = document.getElementById('sparkMessage');
   const submitBtn = document.getElementById('sparkSubmitBtn');
   const name = document.getElementById('nInput').value.trim() || pref.get('name','') || 'Anonymous';
-  const h = getHour();
-  const q = QUOTES[h % QUOTES.length];
+  const q = quoteFor(0);
   const lens = reflectionPromptFor(0);
   const thought = lens.prompt;
   const key = hourKey(0);
@@ -2209,7 +2296,7 @@ async function submitSpark() {
   try {
     saved = await apiPost('spark', {
       hour_key: key,
-      thought_index: h % THOUGHTS.length,
+      thought_index: quoteIndexFor(0),
       thought,
       prompt_category: lens.id,
       prompt_label: lens.label,
@@ -2338,8 +2425,7 @@ function renderShareCard() {
   const W = 1080, H = 1080;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const h = getHour();
-  const q = QUOTES[h % QUOTES.length];
+  const q = quoteFor(0);
 
   // ── Background ──
   ctx.fillStyle = '#09090f';
@@ -2429,7 +2515,7 @@ function renderShareCard() {
 
 async function nativeShare() {
   const canvas = document.getElementById('shareCanvas');
-  const q = QUOTES[getHour() % QUOTES.length];
+  const q = quoteFor(0);
   canvas.toBlob(async blob => {
     const file = new File([blob], 'tember-quote.png', { type: 'image/png' });
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
