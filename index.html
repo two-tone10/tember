@@ -1442,6 +1442,7 @@ const THOUGHTS = [
 
 const TAG_LABELS = { resonated:"✦ This landed", "with-it":"◎ Still contemplating", missed:"· Missed me" };
 const API_URL = '/api/tember';
+const ARCHIVE_HOURS = 168;
 
 const PROMPT_LENSES = [
   {
@@ -2118,7 +2119,7 @@ function renderThreads() {
   const all  = [...serverSparks.filter(s => !localIds.has(String(s.id))), ...userSparks];
   const list = document.getElementById('threadsList');
   const rows = [];
-  for (let offset = 1; offset <= 5; offset++) {
+  for (let offset = 1; offset <= ARCHIVE_HOURS; offset++) {
     const key    = hourKey(offset);
     const sparks = all.filter(s => s.key === key);
     if (!sparks.length) continue;
