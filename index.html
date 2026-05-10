@@ -926,6 +926,21 @@ input#nInput:focus { outline: none; }
   color: var(--text-mid); line-height: 1.4;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.thread-quote {
+  font-size: 12.5px; font-weight: 300; font-style: italic;
+  color: var(--text-mid); line-height: 1.45;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.thread-author {
+  margin-top: 3px;
+  font-size: 10.5px; color: var(--text-dim);
+}
+.thread-prompt {
+  margin-top: 5px;
+  font-size: 11px; color: var(--text-dim);
+  line-height: 1.45;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .thread-badge {
   font-size: 10px; font-weight: 600; color: var(--text-dim);
   background: rgba(255,255,255,0.04); border: 1px solid var(--border);
@@ -1681,6 +1696,9 @@ function mapRemoteSpark(row) {
     text: row.text,
     name: row.name || 'Anonymous',
     tag: row.tag || null,
+    quote: row.quote || '',
+    author: row.author || '',
+    prompt: row.prompt_text || row.thought || '',
     ts: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
     r: row.resonance_count || 0
   };
@@ -2104,7 +2122,10 @@ function renderThreads() {
     const key    = hourKey(offset);
     const sparks = all.filter(s => s.key === key);
     if (!sparks.length) continue;
-    const thought = reflectionPromptFor(offset).prompt;
+    const first = sparks.find(s => s.quote) || sparks[0];
+    const quoteText = first?.quote || thoughtFor(offset).t;
+    const authorText = first?.author || thoughtFor(offset).a;
+    const promptText = first?.prompt || reflectionPromptFor(offset).prompt;
     const isOpen  = openThreads.has(offset);
     const miniCards = sparks.map(s => {
       const sid = String(s.id);
@@ -2121,7 +2142,9 @@ function renderThreads() {
         <span class="thread-chevron">▶</span>
         <div class="thread-info">
           <div class="thread-time">${hourRange(offset)}</div>
-          <div class="thread-thought">"${thought}"</div>
+          <div class="thread-quote">“${esc(quoteText)}”</div>
+          <div class="thread-author">— ${esc(authorText)}</div>
+          <div class="thread-prompt">${esc(promptText)}</div>
         </div>
         <span class="thread-badge">${sparks.length} spark${sparks.length!==1?'s':''}</span>
       </button>
