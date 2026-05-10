@@ -825,6 +825,16 @@ input#nInput:focus { outline: none; }
   transition: opacity 0.15s;
 }
 .btn-submit:hover { opacity: 0.85; }
+.btn-submit:disabled { opacity: 0.55; cursor: wait; }
+.form-message {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.form-message.err { color: var(--rose); }
+.form-message.ok { color: var(--gold); }
 
 /* Feed */
 .feed-section { margin-top: 30px; }
@@ -1251,8 +1261,9 @@ input#nInput:focus { outline: none; }
     <div class="form-row">
       <input id="nInput" type="text" placeholder="Your name (optional)" maxlength="40">
       <button class="btn-cancel" onclick="toggleForm()">Cancel</button>
-      <button class="btn-submit" onclick="submitSpark()">Share →</button>
+      <button class="btn-submit" id="sparkSubmitBtn" onclick="submitSpark()">Share →</button>
     </div>
+    <div class="form-message" id="sparkMessage"></div>
   </div>
 
   <!-- Current feed -->
@@ -2156,34 +2167,58 @@ function pickTag(t, btn) {
 async function submitSpark() {
   const text = document.getElementById('tInput').value.trim();
   if (!text) { document.getElementById('tInput').focus(); return; }
+  const message = document.getElementById('sparkMessage');
+  const submitBtn = document.getElementById('sparkSubmitBtn');
   const name = document.getElementById('nInput').value.trim() || pref.get('name','') || 'Anonymous';
   const h = getHour();
   const q = QUOTES[h % QUOTES.length];
   const lens = reflectionPromptFor(0);
   const thought = lens.prompt;
-  const spark = { id:Date.now(), key:hourKey(0), text, name, tag:selectedTag, ts:Date.now(), r:0 };
+  const key = hourKey(0);
+  if (message) {
+    message.textContent = 'Saving your reflection...';
+    message.className = 'form-message';
+  }
+  if (submitBtn) submitBtn.disabled = true;
+
+  let saved;
+  try {
+    saved = await apiPost('spark', {
+      hour_key: key,
+      thought_index: h % THOUGHTS.length,
+      thought,
+      prompt_category: lens.id,
+      prompt_label: lens.label,
+      prompt_bridge: lens.bridge,
+      prompt_text: lens.prompt,
+      quote: q.t,
+      author: q.a,
+      name,
+      tag: selectedTag || '',
+      text
+    });
+  } catch(e) {
+    if (message) {
+      message.textContent = e.message || 'Tember could not save that yet. Please try again.';
+      message.className = 'form-message err';
+    }
+    if (submitBtn) submitBtn.disabled = false;
+    return;
+  }
+
+  const spark = {
+    id: saved?.id || Date.now(),
+    remoteId: saved?.id || null,
+    key,
+    text,
+    name,
+    tag: selectedTag,
+    ts: saved?.created_at ? new Date(saved.created_at).getTime() : Date.now(),
+    r: saved?.resonance_count || 0
+  };
   userSparks.unshift(spark);
   pref.set('sparks', userSparks);
   pref.set('reflectionCount', reflectionCount());
-  apiPost('spark', {
-    hour_key: spark.key,
-    thought_index: h % THOUGHTS.length,
-    thought,
-    prompt_category: lens.id,
-    prompt_label: lens.label,
-    prompt_bridge: lens.bridge,
-    prompt_text: lens.prompt,
-    quote: q.t,
-    author: q.a,
-    name,
-    tag: selectedTag || '',
-    text
-  }).then(saved => {
-    if (saved?.id) {
-      spark.remoteId = saved.id;
-      pref.set('sparks', userSparks);
-    }
-  }).catch(() => {});
   apiPost('event', {
     event_type: 'reflection_prompt',
     payload: {
@@ -2191,11 +2226,16 @@ async function submitSpark() {
       label: lens.label,
       prompt: lens.prompt,
       bridge: lens.bridge,
-      hour_key: spark.key,
+      hour_key: key,
       quote: q.t,
       author: q.a
     }
   }).catch(() => {});
+  if (message) {
+    message.textContent = '';
+    message.className = 'form-message';
+  }
+  if (submitBtn) submitBtn.disabled = false;
   document.getElementById('tInput').value = '';
   document.getElementById('nInput').value = '';
   document.querySelectorAll('.tag-btn').forEach(b=>b.className='tag-btn');
