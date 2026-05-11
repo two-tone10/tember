@@ -1001,6 +1001,21 @@ input#nInput:focus { outline: none; }
   border: 1px solid var(--border);
   border-radius: 999px; padding: 5px 10px;
 }
+.evening-actions {
+  display: flex; gap: 8px; align-items: center;
+  margin-top: 12px; flex-wrap: wrap;
+}
+.evening-share {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 13px; border-radius: 999px;
+  border: 1px solid var(--gold-bd);
+  background: rgba(232,201,122,0.08);
+  color: var(--gold); font-family: inherit;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer;
+}
+.evening-share:hover { border-color: rgba(232,201,122,0.5); }
 .evening-prompt {
   font-size: 18px; line-height: 1.55;
   color: var(--text); margin: 12px 0 14px;
@@ -1309,6 +1324,29 @@ input#nInput:focus { outline: none; }
 
   <hr class="rule">
 
+  <!-- Evening Ember -->
+  <section class="evening-section" id="evening-ember">
+    <div class="evening-top">
+      <div>
+        <div class="evening-kicker">The Evening Ember</div>
+        <div class="evening-title">A shared unfinished thought.</div>
+        <div class="evening-actions">
+          <button class="evening-share" onclick="shareEveningEmber()">Share Evening Ember</button>
+        </div>
+      </div>
+      <div class="evening-status" id="eveningStatus">Tonight</div>
+    </div>
+    <div class="evening-prompt" id="eveningPrompt"></div>
+    <div class="evening-help" id="eveningHelp"></div>
+    <div class="evening-form" id="eveningForm">
+      <input class="evening-input" id="eveningText" maxlength="240" placeholder="Finish the thought...">
+      <input class="evening-input" id="eveningName" maxlength="40" placeholder="Name (optional)">
+      <button class="evening-submit" id="eveningSubmit" onclick="submitEveningEmber()">Add yours</button>
+      <div class="evening-message" id="eveningMessage"></div>
+    </div>
+    <div class="evening-list" id="eveningList"></div>
+  </section>
+
   <!-- Quote -->
   <section class="quote-hero">
     <div class="hour-label">This hour's quote</div>
@@ -1369,26 +1407,6 @@ input#nInput:focus { outline: none; }
       <span class="feed-count" id="feedCount"></span>
     </div>
     <div class="feed" id="feed"></div>
-  </section>
-
-  <!-- Evening Ember -->
-  <section class="evening-section" id="eveningEmber">
-    <div class="evening-top">
-      <div>
-        <div class="evening-kicker">The Evening Ember</div>
-        <div class="evening-title">A shared unfinished thought.</div>
-      </div>
-      <div class="evening-status" id="eveningStatus">Tonight</div>
-    </div>
-    <div class="evening-prompt" id="eveningPrompt"></div>
-    <div class="evening-help" id="eveningHelp"></div>
-    <div class="evening-form" id="eveningForm">
-      <input class="evening-input" id="eveningText" maxlength="240" placeholder="Finish the thought...">
-      <input class="evening-input" id="eveningName" maxlength="40" placeholder="Name (optional)">
-      <button class="evening-submit" id="eveningSubmit" onclick="submitEveningEmber()">Add yours</button>
-      <div class="evening-message" id="eveningMessage"></div>
-    </div>
-    <div class="evening-list" id="eveningList"></div>
   </section>
 
   <!-- Past threads -->
@@ -2476,14 +2494,14 @@ function eveningPrompt() {
 function eveningState() {
   const now = easternNowParts();
   if (now.hour >= 19 && now.hour < 22) return 'open';
-  if (now.hour >= 16 && now.hour < 19) return 'preview';
+  if (now.hour >= 16 && now.hour < 19) return 'warming';
   if (now.hour >= 22) return 'closed';
-  return 'quiet';
+  return 'countdown';
 }
 
 function eveningCountdownText() {
   const now = easternNowParts();
-  if (now.hour >= 16 && now.hour < 19) {
+  if (now.hour < 19) {
     const mins = (19 - now.hour) * 60 - now.minute;
     const h = Math.floor(mins / 60);
     const m = mins % 60;
@@ -2495,11 +2513,11 @@ function eveningCountdownText() {
     const m = mins % 60;
     return h ? `Open for ${h}h ${m}m` : `Open for ${m}m`;
   }
-  return '';
+  return 'Closed for tonight';
 }
 
 function renderEveningEmber() {
-  const section = document.getElementById('eveningEmber');
+  const section = document.getElementById('evening-ember');
   if (!section) return;
   const state = eveningState();
   const prompt = eveningPrompt();
@@ -2508,17 +2526,17 @@ function renderEveningEmber() {
   const help = document.getElementById('eveningHelp');
   const form = document.getElementById('eveningForm');
   const list = document.getElementById('eveningList');
-  const showSection = state !== 'quiet' || eveningResponses.length;
-  section.hidden = !showSection;
-  if (!showSection) return;
+  section.hidden = false;
   promptEl.textContent = prompt;
   const countText = eveningCountdownText();
-  status.textContent = state === 'open' ? countText : state === 'preview' ? countText : 'Closed';
+  status.textContent = countText;
   form.classList.toggle('open', state === 'open');
   if (state === 'open') {
     help.textContent = 'Finish tonight\'s line. Responses stay quiet, unranked, and part of tonight\'s shared thread.';
-  } else if (state === 'preview') {
-    help.textContent = 'Tonight\'s ember opens at 7pm Eastern and stays open until 10pm. A few examples below show the shape of it.';
+  } else if (state === 'warming') {
+    help.textContent = 'Get ready: tonight\'s ember opens at 7pm Eastern and stays open until 10pm. A few examples below show the shape of it.';
+  } else if (state === 'countdown') {
+    help.textContent = 'Tonight at 7pm Eastern, this unfinished thought opens for a shared response. Until then, you can see the shape of it below.';
   } else {
     help.textContent = 'Tonight\'s ember has closed. The responses remain as a small chorus from the evening.';
   }
@@ -2529,6 +2547,24 @@ function renderEveningEmber() {
     <div class="evening-response-text">...${esc(item.text)}</div>
     <div class="evening-response-name">${item.example ? 'example' : esc(item.name)}</div>
   </div>`).join('');
+}
+
+async function shareEveningEmber() {
+  const prompt = eveningPrompt();
+  const url = `${location.origin}${location.pathname}#evening-ember`;
+  const text = `Tonight's Evening Ember on Tember: ${prompt}`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'The Evening Ember', text, url });
+      return;
+    }
+    await navigator.clipboard.writeText(`${text}\n${url}`);
+    const msg = document.getElementById('eveningMessage');
+    if (msg) {
+      msg.textContent = 'Evening Ember link copied.';
+      msg.className = 'evening-message';
+    }
+  } catch(e) {}
 }
 
 async function submitEveningEmber() {
