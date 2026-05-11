@@ -1,4 +1,4 @@
-const CACHE = 'tember-v4';
+const CACHE = 'tember-v5';
 const ASSETS = ['./index.html', './quotes.js', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 // Install — cache core assets
@@ -21,9 +21,14 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch — serve from cache, fall back to network
+// Fetch — keep the app shell available, but never cache live API data.
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.pathname.startsWith('/api/')) {
+    e.respondWith(fetch(e.request, { cache: 'no-store' }));
+    return;
+  }
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).catch(() => caches.match('./index.html')));
     return;

@@ -68,7 +68,7 @@ body::before {
   position: fixed; inset: 0;
   background: var(--bg);
   z-index: 1000;
-  display: flex; flex-direction: column;
+  display: none; flex-direction: column;
   align-items: center; justify-content: center;
   padding: 32px 28px calc(32px + var(--safe-bottom));
   transition: opacity 0.5s ease, transform 0.5s ease;
@@ -1751,7 +1751,7 @@ function timeAgo(ts) {
 }
 
 // ── APP STATE ─────────────────────────────────────────────────────────────────
-let userSparks = pref.get('sparks', []);
+let userSparks = [];
 let resonated  = new Set(pref.get('resonated', []));
 let selectedTag = null;
 let openThreads = new Set();
@@ -1760,7 +1760,7 @@ let deferredInstall = null;
 let serverSparks = [];
 
 function reflectionCount() {
-  return Math.max(pref.get('reflectionCount', 0), userSparks.length);
+  return pref.get('reflectionCount', 0);
 }
 
 function esc(value) {
@@ -1928,25 +1928,18 @@ async function obFinish() {
 }
 
 function launchApp() {
-  document.getElementById('onboarding').classList.add('out');
-  setTimeout(() => {
-    document.getElementById('onboarding').style.display = 'none';
-    document.getElementById('app').classList.add('visible');
-    syncSettingsSheet();
-    renderAll();
-    showInstallBannerIfReady();
-    showJoinBannerIfNeeded();
-  }, 500);
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  syncSettingsSheet();
+  renderAll();
+  showInstallBannerIfReady();
 }
 
 // ── JOIN BANNER ───────────────────────────────────────────────────────────────
 let joinBannerPace = 'daily';
 
 function showJoinBannerIfNeeded() {
-  // Show if notifications are not set up yet
-  const notifOn = pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted';
-  if (notifOn || pref.get('joinDismissed', false)) return;
-  setTimeout(() => document.getElementById('joinBanner').classList.add('show'), 5000);
+  // Reminders now live in Settings so first-time visitors are not asked twice.
 }
 
 function dismissJoin() {
@@ -2176,13 +2169,9 @@ function renderHero() {
 }
 
 function renderFeed() {
-  // Live feed = only real user sparks for this exact hour
+  // Live feed = Supabase-approved reflections for this exact hour.
   const key = hourKey(0);
-  const localIds = new Set(userSparks.map(s => String(s.remoteId || s.id)));
-  const all = [
-    ...serverSparks.filter(s => !localIds.has(String(s.id))),
-    ...userSparks
-  ].filter(s => s.key === key);
+  const all = serverSparks.filter(s => s.key === key);
   const el  = document.getElementById('feed');
   const cnt = document.getElementById('feedCount');
   cnt.textContent = all.length ? `${all.length} reflection${all.length!==1?'s':''} this hour` : '';
@@ -2203,8 +2192,7 @@ function renderFeed() {
 }
 
 function renderThreads() {
-  const localIds = new Set(userSparks.map(s => String(s.remoteId || s.id)));
-  const all  = [...serverSparks.filter(s => !localIds.has(String(s.id))), ...userSparks];
+  const all = serverSparks;
   const list = document.getElementById('threadsList');
   const rows = [];
   for (let offset = 1; offset <= ARCHIVE_HOURS; offset++) {
@@ -2317,19 +2305,20 @@ async function submitSpark() {
     return;
   }
 
-  const spark = {
-    id: saved?.id || Date.now(),
-    remoteId: saved?.id || null,
-    key,
+  const spark = mapRemoteSpark(saved || {
+    id: Date.now(),
+    hour_key: key,
     text,
     name,
     tag: selectedTag,
-    ts: saved?.created_at ? new Date(saved.created_at).getTime() : Date.now(),
-    r: saved?.resonance_count || 0
-  };
-  userSparks.unshift(spark);
-  pref.set('sparks', userSparks);
-  pref.set('reflectionCount', reflectionCount());
+    created_at: new Date().toISOString(),
+    resonance_count: 0,
+    quote: q.t,
+    author: q.a,
+    prompt_text: lens.prompt
+  });
+  serverSparks = [spark, ...serverSparks.filter(s => String(s.id) !== String(spark.id))];
+  pref.set('reflectionCount', reflectionCount() + 1);
   apiPost('event', {
     event_type: 'reflection_prompt',
     payload: {
@@ -2362,7 +2351,7 @@ function onResonate(id) {
   if (resonated.has(id)) return;
   resonated.add(id);
   pref.set('resonated', [...resonated]);
-  [...userSparks, ...serverSparks].forEach(s => { if(String(s.id)===id) s.r++; });
+  serverSparks.forEach(s => { if(String(s.id)===id) s.r++; });
   renderFeed(); renderThreads();
 }
 
@@ -2546,15 +2535,13 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 
-// Check onboarding
-if (pref.get('onboarded', false)) {
-  document.getElementById('onboarding').style.display = 'none';
-  document.getElementById('app').classList.add('visible');
-  syncSettingsSheet();
-  renderAll();
-  if (pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted') scheduleNotif();
-  showInstallBannerIfReady();
-}
+// Start directly in the app. Sign-up and reminders live in Settings.
+document.getElementById('onboarding').style.display = 'none';
+document.getElementById('app').classList.add('visible');
+syncSettingsSheet();
+renderAll();
+if (pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted') scheduleNotif();
+showInstallBannerIfReady();
 loadBackend();
 
 // Countdown
