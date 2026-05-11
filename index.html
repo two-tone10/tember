@@ -493,6 +493,8 @@ body::before {
 }
 .app-wordmark {
   display: flex; align-items: center; gap: 10px;
+  background: none; border: none; padding: 0;
+  font-family: inherit; cursor: pointer;
 }
 .app-wordmark-icon { width: 22px; height: 22px; }
 .app-wordmark-text {
@@ -1068,8 +1070,8 @@ input#nInput:focus { outline: none; }
     <img src="icon.svg" class="ob-ember" alt="Tember">
     <div class="ob-wordmark">Tember</div>
     <div class="ob-headline">A daily practice<br>in purpose.</div>
-    <p class="ob-sub">A quote. A thought. A question — delivered at the pace you choose, and shared with people like you.</p>
-    <button class="ob-btn" onclick="obNext(2)">Get started →</button>
+    <p class="ob-sub">A quote. A question. A quiet place to reflect with others when you choose.</p>
+    <button class="ob-btn" onclick="enterTember()">Enter Tember →</button>
   </div>
 
   <!-- Screen 2: Pace -->
@@ -1136,8 +1138,8 @@ input#nInput:focus { outline: none; }
     <div class="ob-message" id="obMessage"></div>
   </div>
 
-  <!-- Step dots -->
-  <div class="ob-step">
+  <!-- Step dots kept for legacy onboarding screens, hidden on the simple landing. -->
+  <div class="ob-step" hidden>
     <div class="ob-dot on"  id="dot1"></div>
     <div class="ob-dot"     id="dot2"></div>
     <div class="ob-dot"     id="dot3"></div>
@@ -1212,10 +1214,10 @@ input#nInput:focus { outline: none; }
 <div class="wrap">
 
   <header class="app-header">
-    <div class="app-wordmark">
+    <button class="app-wordmark" onclick="showView('practice')" aria-label="Go to main Tember page">
       <img src="icon.svg" class="app-wordmark-icon" alt="">
       <span class="app-wordmark-text">Tember</span>
-    </div>
+    </button>
     <div class="header-right">
       <button class="header-link" onclick="showView('about')">About</button>
       <div class="header-pill" id="hPill">—</div>
@@ -1307,7 +1309,7 @@ input#nInput:focus { outline: none; }
 
   <main id="aboutView" class="view about-view" hidden>
     <div class="about-kicker">About Tember</div>
-    <h1 class="about-title">Past thoughts and present reflections as bridges to purposeful practice.</h1>
+    <h1 class="about-title">Old words. New meanings. A quiet practice for what still matters.</h1>
     <a class="about-install-link" href="#installTember" onclick="scrollToInstall(event)">Add Tember to your phone</a>
     <div class="about-copy">
       <p>Tember revels in the creative tension between the past and one's purpose.</p>
@@ -1927,8 +1929,17 @@ async function obFinish() {
   launchApp();
 }
 
+function enterTember() {
+  pref.set('seenLanding', true);
+  launchApp();
+}
+
 function launchApp() {
-  document.getElementById('onboarding').style.display = 'none';
+  const onboarding = document.getElementById('onboarding');
+  onboarding.classList.add('out');
+  setTimeout(() => {
+    onboarding.style.display = 'none';
+  }, 420);
   document.getElementById('app').classList.add('visible');
   syncSettingsSheet();
   renderAll();
@@ -2349,10 +2360,19 @@ async function submitSpark() {
 function onResonate(id) {
   id = String(id);
   if (resonated.has(id)) return;
+  let nextCount = 1;
   resonated.add(id);
   pref.set('resonated', [...resonated]);
-  serverSparks.forEach(s => { if(String(s.id)===id) s.r++; });
+  serverSparks.forEach(s => {
+    if (String(s.id) === id) {
+      s.r++;
+      nextCount = s.r;
+    }
+  });
   renderFeed(); renderThreads();
+  if (location.protocol !== 'file:') {
+    apiPost('resonate', { id, count: nextCount }).catch(() => {});
+  }
 }
 
 // ── SHARE CARD ────────────────────────────────────────────────────────────────
@@ -2535,13 +2555,18 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 
-// Start directly in the app. Sign-up and reminders live in Settings.
-document.getElementById('onboarding').style.display = 'none';
-document.getElementById('app').classList.add('visible');
-syncSettingsSheet();
-renderAll();
+// Show the simple welcome once; sign-up and reminders live in Settings.
+if (pref.get('seenLanding', false)) {
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  syncSettingsSheet();
+  renderAll();
+  showInstallBannerIfReady();
+} else {
+  document.getElementById('onboarding').style.display = 'flex';
+  renderHero();
+}
 if (pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted') scheduleNotif();
-showInstallBannerIfReady();
 loadBackend();
 
 // Countdown
