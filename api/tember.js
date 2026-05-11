@@ -1,7 +1,8 @@
 const TABLES = {
   subscribers: 'tember_subscribers',
   sparks: 'tember_sparks',
-  events: 'tember_events'
+  events: 'tember_events',
+  evening: 'tember_evening_embers'
 };
 
 const VALID_PACES = new Set(['hourly', '3x', 'daily']);
@@ -73,6 +74,30 @@ function cleanPace(value) {
 function hourKey(value = new Date()) {
   const d = value instanceof Date ? value : new Date(value);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}`;
+}
+
+function easternParts(value = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false
+  }).formatToParts(value).reduce((memo, part) => {
+    memo[part.type] = part.value;
+    return memo;
+  }, {});
+  return parts;
+}
+
+function easternDateKey(value = new Date()) {
+  const parts = easternParts(value);
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function easternHour(value = new Date()) {
+  return Number(easternParts(value).hour);
 }
 
 function priorHourKeys(count = 5) {
@@ -216,13 +241,53 @@ async function recordEvent(payload) {
   });
 }
 
+async function createEveningEmber(payload) {
+  const hour = easternHour();
+  if (hour < 19 || hour >= 22) {
+    const err = new Error('The Evening Ember opens from 7pm to 10pm Eastern.');
+    err.statusCode = 403;
+    throw err;
+  }
+  const text = cleanText(payload.text).slice(0, 240);
+  if (!text) {
+    const err = new Error('Add a few words to complete tonight\'s ember.');
+    err.statusCode = 400;
+    throw err;
+  }
+  const prompt = cleanText(payload.prompt).slice(0, 240);
+  const promptIndex = Number.parseInt(payload.prompt_index, 10) || 0;
+  const row = {
+    date_key: cleanText(payload.date_key, easternDateKey()).slice(0, 20),
+    prompt_index: promptIndex,
+    prompt,
+    name: cleanText(payload.name, 'Anonymous').slice(0, 80) || 'Anonymous',
+    text,
+    status: 'approved'
+  };
+  const rows = await supabase(TABLES.evening, {
+    method: 'POST',
+    headers: { prefer: 'return=representation' },
+    body: JSON.stringify(row)
+  });
+  return rows?.[0] || null;
+}
+
 async function bootstrap() {
   const keys = [hourKey(), ...priorHourKeys(ARCHIVE_HOURS)];
   const keyFilter = keys.map((key) => `"${key}"`).join(',');
   const sparks = await supabase(
     `${TABLES.sparks}?select=*&hour_key=in.(${keyFilter})&status=eq.approved&order=created_at.desc&limit=500`
   );
-  return { hour_key: keys[0], prior_hour_keys: keys.slice(1), sparks: sparks || [] };
+  const dateKey = easternDateKey();
+  const evening = await supabase(
+    `${TABLES.evening}?select=*&date_key=eq.${encodeURIComponent(dateKey)}&status=eq.approved&order=created_at.asc&limit=80`
+  );
+  return {
+    hour_key: keys[0],
+    prior_hour_keys: keys.slice(1),
+    sparks: sparks || [],
+    evening_ember: { date_key: dateKey, responses: evening || [] }
+  };
 }
 
 module.exports = async function handler(req, res) {
@@ -251,6 +316,9 @@ module.exports = async function handler(req, res) {
     }
     if (action === 'resonate') {
       return send(res, 200, { ok: true, data: await resonate(payload) });
+    }
+    if (action === 'evening_ember') {
+      return send(res, 200, { ok: true, data: await createEveningEmber(payload) });
     }
     if (action === 'event') {
       await recordEvent(payload);
