@@ -1057,7 +1057,6 @@ input#nInput:focus { outline: none; }
   background: rgba(0,0,0,0.16);
   border-radius: 10px; padding: 12px 14px;
 }
-.evening-response.example { opacity: 0.72; }
 .evening-response-text {
   font-size: 13.5px; line-height: 1.62; color: var(--text-mid);
 }
@@ -1692,13 +1691,6 @@ const EVENING_PROMPTS = [
   'If today had a lesson, it might be...'
 ];
 
-const EVENING_EXAMPLES = [
-  { text: 'I made space for a conversation I normally would have rushed through.', name: 'M.' },
-  { text: 'I stopped trying to win the day and just tried to notice it.', name: 'Anonymous' },
-  { text: 'I helped someone feel less alone, even if only for a few mintues.', name: 'J.' },
-  { text: 'I chose the slower answer because it felt more honest.', name: 'Anonymous' },
-  { text: 'I remembered that rest can be part of the work.', name: 'A.' }
-];
 
 const PROMPT_LENSES = [
   {
@@ -2527,32 +2519,33 @@ function renderEveningEmber() {
   const form = document.getElementById('eveningForm');
   const list = document.getElementById('eveningList');
   section.hidden = false;
-  promptEl.textContent = prompt;
   const countText = eveningCountdownText();
   status.textContent = countText;
-  form.classList.toggle('open', state === 'open');
-  if (state === 'open') {
+  const isOpen = state === 'open';
+  promptEl.textContent = isOpen || eveningResponses.length ? prompt : '';
+  promptEl.hidden = !promptEl.textContent;
+  form.classList.toggle('open', isOpen);
+  if (isOpen) {
     help.textContent = 'Finish tonight\'s line. Responses stay quiet, unranked, and part of tonight\'s shared thread.';
-  } else if (state === 'warming') {
-    help.textContent = 'Get ready: tonight\'s ember opens at 7pm Eastern and stays open until 10pm. A few examples below show the shape of it.';
-  } else if (state === 'countdown') {
-    help.textContent = 'Tonight at 7pm Eastern, this unfinished thought opens for a shared response. Until then, you can see the shape of it below.';
+  } else if (state === 'closed') {
+    help.textContent = eveningResponses.length
+      ? 'Tonight\'s ember has closed. The responses remain as a small chorus from the evening.'
+      : 'Tonight\'s ember has closed. Return tomorrow for another shared unfinished thought.';
   } else {
-    help.textContent = 'Tonight\'s ember has closed. The responses remain as a small chorus from the evening.';
+    help.textContent = 'Tonight from 7pm to 10pm (eastern), an unfinished thought opens for a shared response. You are invited to engage or just reflect as others engage.';
   }
-  const rows = eveningResponses.length
-    ? eveningResponses
-    : EVENING_EXAMPLES.map((item, index) => ({ ...item, id: `example-${index}`, example: true }));
-  list.innerHTML = rows.map(item => `<div class="evening-response${item.example ? ' example' : ''}">
+  list.innerHTML = eveningResponses.map(item => `<div class="evening-response">
     <div class="evening-response-text">...${esc(item.text)}</div>
-    <div class="evening-response-name">${item.example ? 'example' : esc(item.name)}</div>
+    <div class="evening-response-name">${esc(item.name)}</div>
   </div>`).join('');
 }
 
 async function shareEveningEmber() {
   const prompt = eveningPrompt();
   const url = `${location.origin}${location.pathname}#evening-ember`;
-  const text = `Tonight's Evening Ember on Tember: ${prompt}`;
+  const text = eveningState() === 'open'
+    ? `Tonight's Evening Ember on Tember: ${prompt}`
+    : 'Tonight from 7pm to 10pm Eastern, The Evening Ember opens on Tember.';
   try {
     if (navigator.share) {
       await navigator.share({ title: 'The Evening Ember', text, url });
