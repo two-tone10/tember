@@ -1069,9 +1069,9 @@ input#nInput:focus { outline: none; }
   <div class="ob-screen active" id="ob1">
     <img src="icon.svg" class="ob-ember" alt="Tember">
     <div class="ob-wordmark">Tember</div>
-    <div class="ob-headline">A daily practice<br>in purpose.</div>
-    <p class="ob-sub">A quote. A question. A quiet place to reflect with others when you choose.</p>
-    <button class="ob-btn" onclick="enterTember()">Enter Tember →</button>
+    <div class="ob-headline" id="landingHeadline">A daily practice<br>in purpose.</div>
+    <p class="ob-sub" id="landingSub">A quote. A question. A quiet place to reflect with others when you choose.</p>
+    <button class="ob-btn" id="landingBtn" onclick="enterTember()">Enter Tember →</button>
   </div>
 
   <!-- Screen 2: Pace -->
@@ -1929,6 +1929,24 @@ async function obFinish() {
   launchApp();
 }
 
+function personalizeLanding() {
+  const seen = pref.get('seenLanding', false);
+  const name = pref.get('name', '');
+  const headline = document.getElementById('landingHeadline');
+  const sub = document.getElementById('landingSub');
+  const btn = document.getElementById('landingBtn');
+  if (!headline || !sub || !btn) return;
+  if (seen) {
+    headline.innerHTML = name ? `Welcome back,<br>${esc(name)}.` : 'Welcome back<br>to Tember.';
+    sub.textContent = 'A new quote is waiting. Step in gently, or just see what others noticed.';
+    btn.textContent = 'Return to the quote →';
+  } else {
+    headline.innerHTML = 'A daily practice<br>in purpose.';
+    sub.textContent = 'A quote. A question. A quiet place to reflect with others when you choose.';
+    btn.textContent = 'Enter Tember →';
+  }
+}
+
 function enterTember() {
   pref.set('seenLanding', true);
   launchApp();
@@ -2555,17 +2573,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 
-// Show the simple welcome once; sign-up and reminders live in Settings.
-if (pref.get('seenLanding', false)) {
-  document.getElementById('onboarding').style.display = 'none';
-  document.getElementById('app').classList.add('visible');
-  syncSettingsSheet();
-  renderAll();
-  showInstallBannerIfReady();
-} else {
-  document.getElementById('onboarding').style.display = 'flex';
-  renderHero();
-}
+// Show the welcome threshold on each fresh visit; sign-up and reminders live in Settings.
+document.getElementById('onboarding').style.display = 'flex';
+personalizeLanding();
+renderHero();
 if (pref.get('notif', false) && 'Notification' in window && Notification.permission === 'granted') scheduleNotif();
 loadBackend();
 
