@@ -971,6 +971,85 @@ input#nInput:focus { outline: none; }
 .mini-resonate:hover:not(.lit) { border-color: var(--border-s); color: var(--text-mid); }
 .mini-resonate.lit { background: var(--gold-bg); border-color: var(--gold-bd); color: var(--gold); }
 
+/* Evening Ember */
+.evening-section {
+  margin-top: 38px;
+  border: 1px solid rgba(232,201,122,0.18);
+  background: linear-gradient(180deg, rgba(232,201,122,0.055), rgba(255,255,255,0.018));
+  border-radius: var(--r);
+  padding: 24px 24px 22px;
+}
+.evening-top {
+  display: flex; justify-content: space-between; gap: 16px;
+  align-items: flex-start; margin-bottom: 16px;
+}
+.evening-kicker {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 8px;
+}
+.evening-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+  font-style: italic; line-height: 1.28; color: var(--text);
+}
+.evening-status {
+  flex-shrink: 0;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 10px;
+}
+.evening-prompt {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text); margin: 12px 0 14px;
+}
+.evening-help {
+  font-size: 12.5px; line-height: 1.65;
+  color: var(--text-dim); margin-bottom: 16px;
+}
+.evening-form {
+  display: none; gap: 10px; align-items: center;
+  margin: 12px 0 16px; flex-wrap: wrap;
+}
+.evening-form.open { display: flex; }
+.evening-input {
+  flex: 1; min-width: 180px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border-s);
+  border-radius: 8px; padding: 10px 12px;
+  font-family: inherit; font-size: 14px; color: var(--text);
+}
+.evening-input:focus { outline: none; border-color: var(--gold-bd); }
+.evening-submit {
+  padding: 10px 16px; border: none; border-radius: 8px;
+  background: var(--gold); color: #09090f;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  cursor: pointer;
+}
+.evening-submit:disabled { opacity: 0.55; cursor: wait; }
+.evening-message {
+  width: 100%; min-height: 16px;
+  font-size: 11px; color: var(--text-dim);
+}
+.evening-message.err { color: var(--rose); }
+.evening-list {
+  display: grid; gap: 8px; margin-top: 12px;
+}
+.evening-response {
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.16);
+  border-radius: 10px; padding: 12px 14px;
+}
+.evening-response.example { opacity: 0.72; }
+.evening-response-text {
+  font-size: 13.5px; line-height: 1.62; color: var(--text-mid);
+}
+.evening-response-name {
+  margin-top: 7px; font-size: 10.5px; color: var(--text-dim);
+}
+
 /* Footer */
 .app-footer { padding: 56px 0 32px; text-align: center; }
 .footer-ember { width: 20px; height: 20px; opacity: 0.3; margin: 0 auto 10px; }
@@ -1292,6 +1371,26 @@ input#nInput:focus { outline: none; }
     <div class="feed" id="feed"></div>
   </section>
 
+  <!-- Evening Ember -->
+  <section class="evening-section" id="eveningEmber">
+    <div class="evening-top">
+      <div>
+        <div class="evening-kicker">The Evening Ember</div>
+        <div class="evening-title">A shared unfinished thought.</div>
+      </div>
+      <div class="evening-status" id="eveningStatus">Tonight</div>
+    </div>
+    <div class="evening-prompt" id="eveningPrompt"></div>
+    <div class="evening-help" id="eveningHelp"></div>
+    <div class="evening-form" id="eveningForm">
+      <input class="evening-input" id="eveningText" maxlength="240" placeholder="Finish the thought...">
+      <input class="evening-input" id="eveningName" maxlength="40" placeholder="Name (optional)">
+      <button class="evening-submit" id="eveningSubmit" onclick="submitEveningEmber()">Add yours</button>
+      <div class="evening-message" id="eveningMessage"></div>
+    </div>
+    <div class="evening-list" id="eveningList"></div>
+  </section>
+
   <!-- Past threads -->
   <section class="threads-section">
     <div class="threads-title">Previous threads</div>
@@ -1314,6 +1413,7 @@ input#nInput:focus { outline: none; }
     <div class="about-copy">
       <p>Tember revels in the creative tension between the past and one's purpose.</p>
       <p>Quotes update every hour, inviting reflection and potential relevance to be found in the present moment. You're welcome to share an insight as prompted. Or, just enjoy this space and observe as others engage with it.</p>
+      <p>Each evening from 7pm to 10pm Eastern, The Evening Ember opens: one unfinished thought, completed quietly by anyone who wants to add a line. Around 4pm, Tember begins counting down toward it.</p>
       <p>Tember is created and hosted by <a href="mailto:alb325@cornell.edu">Anthony Burrow</a>, who studies purpose and appreciates creating ways for people to sense more of it in their lives.</p>
     </div>
 
@@ -1530,6 +1630,57 @@ const THOUGHTS = [
 const TAG_LABELS = { resonated:"✦ This landed", "with-it":"◎ Still contemplating", missed:"· Missed me" };
 const API_URL = '/api/tember';
 const ARCHIVE_HOURS = 168;
+
+const EVENING_PROMPTS = [
+  'I felt most purposeful today when...',
+  'Purpose begins when...',
+  'A life becomes meaningful when...',
+  'The thing I keep returning to is...',
+  'I knew I was changing when...',
+  'Today asked me to...',
+  'One small thing that mattered was...',
+  'I felt most like myself when...',
+  'A quiet form of courage is...',
+  'The future felt possible when...',
+  'I want to carry forward...',
+  'Something I almost missed today was...',
+  'I felt connected when...',
+  'The work worth doing is...',
+  'I am learning to trust...',
+  'A good life might be made of...',
+  'The question I am still holding is...',
+  'I felt less alone when...',
+  'Something in me softened when...',
+  'Today reminded me that...',
+  'I want to become someone who...',
+  'The past spoke up today when...',
+  'One way I practiced purpose was...',
+  'I was braver than I thought when...',
+  'The world felt wider when...',
+  'What I owe tomorrow is...',
+  'A person who shaped my day was...',
+  'I found meaning in...',
+  'The thing I could release is...',
+  'A small promise I can keep is...',
+  'I felt useful when...',
+  'Something worth protecting is...',
+  'I am still becoming...',
+  'What gave today weight was...',
+  'I want to remember...',
+  'A generous interpretation would be...',
+  'I noticed my life moving toward...',
+  'Something I can repair is...',
+  'The ember I am carrying is...',
+  'If today had a lesson, it might be...'
+];
+
+const EVENING_EXAMPLES = [
+  { text: 'I made space for a conversation I normally would have rushed through.', name: 'M.' },
+  { text: 'I stopped trying to win the day and just tried to notice it.', name: 'Anonymous' },
+  { text: 'I helped someone feel less alone, even if only for a few mintues.', name: 'J.' },
+  { text: 'I chose the slower answer because it felt more honest.', name: 'Anonymous' },
+  { text: 'I remembered that rest can be part of the work.', name: 'A.' }
+];
 
 const PROMPT_LENSES = [
   {
@@ -1760,6 +1911,8 @@ let openThreads = new Set();
 let notifTimer  = null;
 let deferredInstall = null;
 let serverSparks = [];
+let eveningResponses = [];
+let eveningDateKey = '';
 
 function reflectionCount() {
   return pref.get('reflectionCount', 0);
@@ -1797,6 +1950,18 @@ function mapRemoteSpark(row) {
   };
 }
 
+function mapEveningResponse(row) {
+  return {
+    id: row.id,
+    date_key: row.date_key,
+    prompt_index: row.prompt_index || 0,
+    prompt: row.prompt || '',
+    text: row.text || '',
+    name: row.name || 'Anonymous',
+    ts: row.created_at ? new Date(row.created_at).getTime() : Date.now()
+  };
+}
+
 async function loadBackend() {
   if (location.protocol === 'file:') return;
   try {
@@ -1804,6 +1969,8 @@ async function loadBackend() {
     const body = await res.json();
     if (res.ok && body.ok && body.data?.sparks) {
       serverSparks = body.data.sparks.map(mapRemoteSpark);
+      eveningResponses = (body.data.evening_ember?.responses || []).map(mapEveningResponse);
+      eveningDateKey = body.data.evening_ember?.date_key || eveningDateKey;
       renderAll();
     }
   } catch(e) {}
@@ -2271,8 +2438,135 @@ function renderAll() {
   renderGreeting();
   renderHero();
   renderFeed();
+  renderEveningEmber();
   renderThreads();
 }
+
+// ── EVENING EMBER ─────────────────────────────────────────────────────────────
+
+function easternNowParts() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(new Date()).reduce((memo, part) => {
+    memo[part.type] = part.value;
+    return memo;
+  }, {});
+  return {
+    dateKey: `${parts.year}-${parts.month}-${parts.day}`,
+    hour: Number(parts.hour),
+    minute: Number(parts.minute)
+  };
+}
+
+function eveningPromptIndex(dateKey = easternNowParts().dateKey) {
+  const seed = dateKey.replace(/-/g, '');
+  return Number(seed) % EVENING_PROMPTS.length;
+}
+
+function eveningPrompt() {
+  return EVENING_PROMPTS[eveningPromptIndex()];
+}
+
+function eveningState() {
+  const now = easternNowParts();
+  if (now.hour >= 19 && now.hour < 22) return 'open';
+  if (now.hour >= 16 && now.hour < 19) return 'preview';
+  if (now.hour >= 22) return 'closed';
+  return 'quiet';
+}
+
+function eveningCountdownText() {
+  const now = easternNowParts();
+  if (now.hour >= 16 && now.hour < 19) {
+    const mins = (19 - now.hour) * 60 - now.minute;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h ? `Opens in ${h}h ${m}m` : `Opens in ${m}m`;
+  }
+  if (now.hour >= 19 && now.hour < 22) {
+    const mins = (22 - now.hour) * 60 - now.minute;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h ? `Open for ${h}h ${m}m` : `Open for ${m}m`;
+  }
+  return '';
+}
+
+function renderEveningEmber() {
+  const section = document.getElementById('eveningEmber');
+  if (!section) return;
+  const state = eveningState();
+  const prompt = eveningPrompt();
+  const status = document.getElementById('eveningStatus');
+  const promptEl = document.getElementById('eveningPrompt');
+  const help = document.getElementById('eveningHelp');
+  const form = document.getElementById('eveningForm');
+  const list = document.getElementById('eveningList');
+  const showSection = state !== 'quiet' || eveningResponses.length;
+  section.hidden = !showSection;
+  if (!showSection) return;
+  promptEl.textContent = prompt;
+  const countText = eveningCountdownText();
+  status.textContent = state === 'open' ? countText : state === 'preview' ? countText : 'Closed';
+  form.classList.toggle('open', state === 'open');
+  if (state === 'open') {
+    help.textContent = 'Finish tonight\'s line. Responses stay quiet, unranked, and part of tonight\'s shared thread.';
+  } else if (state === 'preview') {
+    help.textContent = 'Tonight\'s ember opens at 7pm Eastern and stays open until 10pm. A few examples below show the shape of it.';
+  } else {
+    help.textContent = 'Tonight\'s ember has closed. The responses remain as a small chorus from the evening.';
+  }
+  const rows = eveningResponses.length
+    ? eveningResponses
+    : EVENING_EXAMPLES.map((item, index) => ({ ...item, id: `example-${index}`, example: true }));
+  list.innerHTML = rows.map(item => `<div class="evening-response${item.example ? ' example' : ''}">
+    <div class="evening-response-text">...${esc(item.text)}</div>
+    <div class="evening-response-name">${item.example ? 'example' : esc(item.name)}</div>
+  </div>`).join('');
+}
+
+async function submitEveningEmber() {
+  const textEl = document.getElementById('eveningText');
+  const nameEl = document.getElementById('eveningName');
+  const btn = document.getElementById('eveningSubmit');
+  const msg = document.getElementById('eveningMessage');
+  const text = textEl.value.trim();
+  if (!text) { textEl.focus(); return; }
+  if (eveningState() !== 'open') {
+    msg.textContent = 'The Evening Ember opens from 7pm to 10pm Eastern.';
+    msg.className = 'evening-message err';
+    return;
+  }
+  btn.disabled = true;
+  msg.textContent = 'Adding your line...';
+  msg.className = 'evening-message';
+  try {
+    const now = easternNowParts();
+    const saved = await apiPost('evening_ember', {
+      date_key: now.dateKey,
+      prompt_index: eveningPromptIndex(now.dateKey),
+      prompt: eveningPrompt(),
+      name: nameEl.value.trim() || pref.get('name', '') || 'Anonymous',
+      text
+    });
+    eveningResponses.push(mapEveningResponse(saved));
+    textEl.value = '';
+    msg.textContent = 'Added to tonight\'s ember.';
+    renderEveningEmber();
+  } catch(e) {
+    msg.textContent = e.message || 'Tember could not save that yet.';
+    msg.className = 'evening-message err';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 
 // ── FORM ──────────────────────────────────────────────────────────────────────
 function toggleForm() {
@@ -2586,6 +2880,7 @@ setInterval(() => {
   const el = document.getElementById('tTimer');
   if (el) el.textContent = `Refreshes in ${m} minute${m!==1?'s':''}`;
   renderFeed();
+  renderEveningEmber();
 }, 60000);
 
 // Hour flip
