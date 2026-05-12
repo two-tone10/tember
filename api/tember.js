@@ -282,11 +282,15 @@ async function bootstrap() {
   const evening = await supabase(
     `${TABLES.evening}?select=*&date_key=eq.${encodeURIComponent(dateKey)}&status=eq.approved&order=created_at.asc&limit=80`
   );
+  const pastEvening = await supabase(
+    `${TABLES.evening}?select=*&date_key=lt.${encodeURIComponent(dateKey)}&status=eq.approved&order=date_key.desc,created_at.asc&limit=240`
+  );
   return {
     hour_key: keys[0],
     prior_hour_keys: keys.slice(1),
     sparks: sparks || [],
-    evening_ember: { date_key: dateKey, responses: evening || [] }
+    evening_ember: { date_key: dateKey, responses: evening || [] },
+    past_evening_embers: pastEvening || []
   };
 }
 
