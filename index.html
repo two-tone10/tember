@@ -1063,6 +1063,45 @@ input#nInput:focus { outline: none; }
 .evening-response-name {
   margin-top: 7px; font-size: 10.5px; color: var(--text-dim);
 }
+.evening-section.compact .evening-prompt,
+.evening-section.compact .evening-form,
+.evening-section.compact .evening-list { display: none; }
+.past-embers {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+.past-embers-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-mid); margin-bottom: 12px;
+}
+.past-ember-item {
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  margin-bottom: 8px; background: rgba(0,0,0,0.12);
+}
+.past-ember-toggle {
+  width: 100%; background: none; border: none;
+  color: inherit; font-family: inherit; text-align: left;
+  display: flex; justify-content: space-between; gap: 14px;
+  align-items: center; padding: 13px 14px; cursor: pointer;
+}
+.past-ember-date {
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--text-dim);
+  margin-bottom: 5px;
+}
+.past-ember-prompt {
+  font-size: 13px; color: var(--text-mid); line-height: 1.5;
+}
+.past-ember-count {
+  flex-shrink: 0; font-size: 10px; color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 4px 9px;
+}
+.past-ember-body { display: none; padding: 0 14px 14px; }
+.past-ember-item.open .past-ember-body { display: grid; gap: 8px; }
 
 /* Footer */
 .app-footer { padding: 56px 0 32px; text-align: center; }
@@ -1323,29 +1362,6 @@ input#nInput:focus { outline: none; }
 
   <hr class="rule">
 
-  <!-- Evening Ember -->
-  <section class="evening-section" id="evening-ember">
-    <div class="evening-top">
-      <div>
-        <div class="evening-kicker">The Evening Ember</div>
-        <div class="evening-title">A shared unfinished thought.</div>
-        <div class="evening-actions">
-          <button class="evening-share" onclick="shareEveningEmber()">Share Evening Ember</button>
-        </div>
-      </div>
-      <div class="evening-status" id="eveningStatus">Tonight</div>
-    </div>
-    <div class="evening-prompt" id="eveningPrompt"></div>
-    <div class="evening-help" id="eveningHelp"></div>
-    <div class="evening-form" id="eveningForm">
-      <input class="evening-input" id="eveningText" maxlength="240" placeholder="Finish the thought...">
-      <input class="evening-input" id="eveningName" maxlength="40" placeholder="Name (optional)">
-      <button class="evening-submit" id="eveningSubmit" onclick="submitEveningEmber()">Add yours</button>
-      <div class="evening-message" id="eveningMessage"></div>
-    </div>
-    <div class="evening-list" id="eveningList"></div>
-  </section>
-
   <!-- Quote -->
   <section class="quote-hero">
     <div class="hour-label">This hour's quote</div>
@@ -1406,6 +1422,34 @@ input#nInput:focus { outline: none; }
       <span class="feed-count" id="feedCount"></span>
     </div>
     <div class="feed" id="feed"></div>
+  </section>
+
+  <!-- Evening Ember -->
+  <section class="evening-section" id="evening-ember">
+    <div class="evening-top">
+      <div>
+        <div class="evening-kicker">The Evening Ember</div>
+        <div class="evening-title">A shared unfinished thought.</div>
+        <div class="evening-actions">
+          <button class="evening-share" onclick="shareEveningEmber()">Share Evening Ember</button>
+        </div>
+      </div>
+      <div class="evening-status" id="eveningStatus">Tonight</div>
+    </div>
+    <div class="evening-prompt" id="eveningPrompt"></div>
+    <div class="evening-help" id="eveningHelp"></div>
+    <div class="evening-form" id="eveningForm">
+      <input class="evening-input" id="eveningText" maxlength="240" placeholder="Finish the thought...">
+      <input class="evening-input" id="eveningName" maxlength="40" placeholder="Name (optional)">
+      <button class="evening-submit" id="eveningSubmit" onclick="submitEveningEmber()">Add yours</button>
+      <div class="evening-message" id="eveningMessage"></div>
+    </div>
+    <div class="evening-list" id="eveningList"></div>
+  </section>
+
+  <section class="past-embers" id="pastEmbers">
+    <div class="past-embers-title">Past Embers</div>
+    <div id="pastEmbersList"></div>
   </section>
 
   <!-- Past threads -->
@@ -1923,6 +1967,8 @@ let deferredInstall = null;
 let serverSparks = [];
 let eveningResponses = [];
 let eveningDateKey = '';
+let pastEveningResponses = [];
+let openPastEmbers = new Set();
 
 function reflectionCount() {
   return pref.get('reflectionCount', 0);
@@ -1981,6 +2027,7 @@ async function loadBackend() {
       serverSparks = body.data.sparks.map(mapRemoteSpark);
       eveningResponses = (body.data.evening_ember?.responses || []).map(mapEveningResponse);
       eveningDateKey = body.data.evening_ember?.date_key || eveningDateKey;
+      pastEveningResponses = (body.data.past_evening_embers || []).map(mapEveningResponse);
       renderAll();
     }
   } catch(e) {}
@@ -2449,6 +2496,7 @@ function renderAll() {
   renderHero();
   renderFeed();
   renderEveningEmber();
+  renderPastEmbers();
   renderThreads();
 }
 
@@ -2519,6 +2567,7 @@ function renderEveningEmber() {
   const form = document.getElementById('eveningForm');
   const list = document.getElementById('eveningList');
   section.hidden = false;
+  section.classList.toggle('compact', state === 'countdown' || state === 'warming');
   const countText = eveningCountdownText();
   status.textContent = countText;
   const isOpen = state === 'open';
@@ -2539,6 +2588,54 @@ function renderEveningEmber() {
     <div class="evening-response-name">${esc(item.name)}</div>
   </div>`).join('');
 }
+
+
+function formatEmberDate(dateKey) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function renderPastEmbers() {
+  const list = document.getElementById('pastEmbersList');
+  const section = document.getElementById('pastEmbers');
+  if (!list || !section) return;
+  const grouped = new Map();
+  pastEveningResponses.forEach(item => {
+    if (!grouped.has(item.date_key)) grouped.set(item.date_key, []);
+    grouped.get(item.date_key).push(item);
+  });
+  const entries = [...grouped.entries()].slice(0, 7);
+  section.hidden = !entries.length;
+  if (!entries.length) {
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = entries.map(([dateKey, rows]) => {
+    const first = rows[0];
+    const prompt = first?.prompt || 'A shared unfinished thought.';
+    const open = openPastEmbers.has(dateKey);
+    const cards = rows.map(item => `<div class="evening-response">
+      <div class="evening-response-text">...${esc(item.text)}</div>
+      <div class="evening-response-name">${esc(item.name)}</div>
+    </div>`).join('');
+    return `<div class="past-ember-item${open ? ' open' : ''}">
+      <button class="past-ember-toggle" onclick="togglePastEmber('${esc(dateKey)}')">
+        <div>
+          <div class="past-ember-date">${formatEmberDate(dateKey)}</div>
+          <div class="past-ember-prompt">${esc(prompt)}</div>
+        </div>
+        <div class="past-ember-count">${rows.length} response${rows.length === 1 ? '' : 's'}</div>
+      </button>
+      <div class="past-ember-body">${cards}</div>
+    </div>`;
+  }).join('');
+}
+
+function togglePastEmber(dateKey) {
+  openPastEmbers.has(dateKey) ? openPastEmbers.delete(dateKey) : openPastEmbers.add(dateKey);
+  renderPastEmbers();
+}
+
 
 async function shareEveningEmber() {
   const prompt = eveningPrompt();
